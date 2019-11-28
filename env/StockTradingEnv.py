@@ -9,7 +9,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 20000
+MAX_STEPS = 2000
 
 INITIAL_ACCOUNT_BALANCE = 10000
 
@@ -18,10 +18,11 @@ class StockTradingEnv(gym.Env):
     """A stock trading environment for OpenAI gym"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df):
+    def __init__(self):
         super(StockTradingEnv, self).__init__()
 
-        self.df = df
+        self.df = pd.read_csv('/Users/matteo/PycharmProjects/Multi-Agent-Stock-Trading-Environment/data/AAPL.csv')
+        self.df = self.df.sort_values('Date')
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
@@ -107,7 +108,8 @@ class StockTradingEnv(gym.Env):
         delay_modifier = (self.current_step / MAX_STEPS)
 
         reward = self.balance * delay_modifier
-        done = self.net_worth <= 0
+
+        done = self.balance < 10000
 
         obs = self._next_observation()
 

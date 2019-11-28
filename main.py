@@ -1,26 +1,55 @@
+import random
+
 import gym
 import json
 import datetime as dt
+import ray
+from gym import spaces
+from gym.spaces import Discrete
+from ray import tune
+import numpy as np
+from ray.rllib.policy.policy import Policy
+from ray.tune import register_env
 
-from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import PPO2
-
+from env.StockTradingMultiAgent import StockTradingMultiAgent
 from env.StockTradingEnv import StockTradingEnv
+from ray.rllib.tests.test_multi_agent_env import MultiCartpole
 
 import pandas as pd
 
-df = pd.read_csv('./data/AAPL.csv')
-df = df.sort_values('Date')
 
-# The algorithms require a vectorized environment to run
-env = DummyVecEnv([lambda: StockTradingEnv(df)])
 
-model = PPO2(MlpPolicy, env, verbose=1)
-model.learn(total_timesteps=20000)
 
-obs = env.reset()
-for i in range(2000):
-    action, _states = model.predict(obs)
-    obs, rewards, done, info = env.step(action)
-    env.render()
+def select_policy(agent_id):
+       if agent_id == "player1":
+           return "default_policy"
+       else:
+           return random.choice(["default_policy", "default_policy"])
+
+ray.init()
+
+
+register_env("test", lambda _: StockTradingMultiAgent(2))
+
+tune.run(
+        "PPO",
+        config={
+            "env":  "test",
+            "num_gpus": 0,
+            "num_workers": 7,
+            "eager_tracing": False,
+            "eager": False,
+            "simple_optimizer": True,
+            "multiagent": {
+                  "policies": {
+                                   "pg_policy": (None,  spaces.Box(
+             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+            low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
+                                   "random": (None,  spaces.Box(
+             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+            low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
+                               },
+                "policy_mapping_fn": (
+                    lambda agent_id: ["pg_policy", "random"][agent_id % 2]),
+            },
+        })
