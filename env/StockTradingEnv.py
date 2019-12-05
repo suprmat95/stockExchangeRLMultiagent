@@ -41,7 +41,6 @@ class StockTradingEnv(gym.Env):
             self.total_shares_sold / MAX_NUM_SHARES,
             self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
         ]])
-        print(obs)
 
         return obs
 
@@ -58,6 +57,8 @@ class StockTradingEnv(gym.Env):
             additional_cost = shares_bought * self.current_price
 
             self.balance -= additional_cost
+            print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+
             self.cost_basis = (
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
             self.shares_held += shares_bought
@@ -65,9 +66,10 @@ class StockTradingEnv(gym.Env):
         elif action_type < 2:
             # Sell amount % of shares held
             shares_sold = int(self.shares_held * amount)
-            # print('vendo: ', shares_sold, 'amount ', amount, 'sheres held ', self.shares_held)
 
             self.balance += shares_sold * self.current_price
+            print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
             self.total_sales_value += shares_sold * self.current_price
@@ -82,8 +84,6 @@ class StockTradingEnv(gym.Env):
 
     def step(self, action):
         # Execute one time step within the environment
-        print('share prima ', self.shares_held, 'price ',self.current_price)
-        print(action)
 
         self._take_action(action)
 
@@ -98,7 +98,6 @@ class StockTradingEnv(gym.Env):
         reward = self.balance * delay_modifier
 
         done = self.balance > 20000
-        print('share dopo ', self.shares_held, 'price ',self.current_price)
 
         obs = self._next_observation()
 
@@ -115,8 +114,7 @@ class StockTradingEnv(gym.Env):
         self.total_sales_value = 0
 
         # Set the current step to a random point within the data frame
-        self.current_step = random.randint(
-            0, 5242)
+        self.current_step = random.randint(0, 5242)
 
         return self._next_observation()
 
@@ -133,8 +131,8 @@ class StockTradingEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
-    def step_wrapper(self, action, price):
-
+    def step_wrapper(self, action, price, i):
+        #print('i: ', i)
         self.current_price = price
 
         obs, rew, done, info = self.step(action)

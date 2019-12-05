@@ -28,7 +28,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         #print('RESET ')
         self.resetted = True
         self.dones = set()
-        self.price = random.randint(1,100)
+        self.price = random.randint(1, 100)
         self.initial_shares = np.zeros(self.num)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
@@ -36,7 +36,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
         for i, action in action_dict.items():
-            obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, self.price)
+            obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, self.price, i)
             delta_shares = (obs[i][0][2] - self.initial_shares[i])*MAX_NUM_SHARES
             self.price = self.price_function(self.price, delta_shares)
 
@@ -48,6 +48,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
         return obs, rew, done, info
 
     def price_function(self, initial_price, delta_shares):
-        #print('initial price: ', initial_price, 'second price: ', initial_price + (delta_shares )/initial_price, 'delta: ', delta_shares)
+       # print('initial price: ', initial_price, 'second price: ', initial_price + (delta_shares )/initial_price, 'delta: ', delta_shares)
 
         return initial_price + (delta_shares)/initial_price
