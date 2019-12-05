@@ -83,6 +83,8 @@ class StockTradingEnv(gym.Env):
         elif action_type < 2:
             # Sell amount % of shares held
             shares_sold = int(self.shares_held * amount)
+            # print('vendo: ', shares_sold, 'amount ', amount, 'sheres held ', self.shares_held)
+
             self.balance += shares_sold * current_price
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
@@ -109,7 +111,7 @@ class StockTradingEnv(gym.Env):
 
         reward = self.balance * delay_modifier
 
-        done = self.balance < 10000
+        done = self.balance > 20000
 
         obs = self._next_observation()
 
@@ -120,7 +122,7 @@ class StockTradingEnv(gym.Env):
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
-        self.shares_held = 0
+        self.shares_held = 100
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0

@@ -36,7 +36,7 @@ tune.run(
         config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 7,
+            "num_workers": 0,
             "eager_tracing": False,
             "eager": False,
             "simple_optimizer": True,
