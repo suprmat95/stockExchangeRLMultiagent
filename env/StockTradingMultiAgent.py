@@ -37,10 +37,10 @@ class StockTradingMultiAgent(MultiAgentEnv):
         done["__all__"] = False
         for i, action in action_dict.items():
             obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, self.price)
-            delta_shares = (obs[i][5][2] - self.initial_shares[i])*MAX_NUM_SHARES
+            delta_shares = (obs[i][0][2] - self.initial_shares[i])*MAX_NUM_SHARES
             self.price = self.price_function(self.price, delta_shares)
 
-            self.initial_shares[i] = obs[i][5][2]
+            self.initial_shares[i] = obs[i][0][2]
             if done[i]:
                # print('Fatto')
                 done["__all__"] = True

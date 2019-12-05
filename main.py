@@ -43,10 +43,10 @@ tune.run(
             "multiagent": {
                   "policies": {
                                    "pg_policy": (None,  spaces.Box(
-             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+             low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
                                    "random": (None,  spaces.Box(
-             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+             low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
                                },
                 "policy_mapping_fn": (

@@ -20,9 +20,6 @@ class StockTradingEnv(gym.Env):
 
     def __init__(self):
         super(StockTradingEnv, self).__init__()
-
-        self.df = pd.read_csv('/Users/matteo/PycharmProjects/Multi-Agent-Stock-Trading-Environment/data/AAPL.csv')
-        self.df = self.df.sort_values('Date')
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
@@ -31,32 +28,20 @@ class StockTradingEnv(gym.Env):
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(6, 6), dtype=np.float16)
+            low=0, high=1, shape=(1 , 6), dtype=np.float16)
 
     def _next_observation(self):
-        # Get the stock data points for the last 5 days and scale to between 0-1
-        frame = np.array([
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Open'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'High'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Low'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Close'].values / MAX_SHARE_PRICE,
-            self.df.loc[self.current_step: self.current_step +
-                        5, 'Volume'].values / MAX_NUM_SHARES,
-        ])
 
         # Append additional data and scale each value to between 0-1
-        obs = np.append(frame, [[
+        obs = np.array([[
             self.balance / MAX_ACCOUNT_BALANCE,
             self.max_net_worth / MAX_ACCOUNT_BALANCE,
             self.shares_held / MAX_NUM_SHARES,
             self.cost_basis / MAX_SHARE_PRICE,
             self.total_shares_sold / MAX_NUM_SHARES,
             self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
-        ]], axis=0)
+        ]])
+        print(obs)
 
         return obs
 
@@ -104,7 +89,8 @@ class StockTradingEnv(gym.Env):
 
         self.current_step += 1
 
-        if self.current_step > len(self.df.loc[:, 'Open'].values) - 6:
+
+        if self.current_step > 5242:
             self.current_step = 0
 
         delay_modifier = (self.current_step / MAX_STEPS)
@@ -130,7 +116,7 @@ class StockTradingEnv(gym.Env):
 
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(
-            0, len(self.df.loc[:, 'Open'].values) - 6)
+            0, 5242)
 
         return self._next_observation()
 
