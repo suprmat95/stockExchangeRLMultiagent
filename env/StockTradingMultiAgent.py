@@ -25,8 +25,9 @@ class StockTradingMultiAgent(MultiAgentEnv):
     def step(self, action_dict):
         obs, rew, done, info = {}, {}, {}, {}
         for i, action in action_dict.items():
-            obs[i], rew[i], done[i], info[i] = self.agents[i].step(action)
+            obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, 0.1)
             if done[i]:
                 self.dones.add(i)
         done["__all__"] = len(self.dones) == len(self.agents)
         return obs, rew, done, info
+
