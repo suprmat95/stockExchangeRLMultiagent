@@ -62,18 +62,15 @@ class StockTradingEnv(gym.Env):
 
     def _take_action(self, action):
         # Set the current price to a random price within the time step
-        current_price = random.uniform(
-            self.df.loc[self.current_step, "Open"], self.df.loc[self.current_step, "Close"])
-
         action_type = action[0]
         amount = action[1]
 
         if action_type < 1:
             # Buy amount % of balance in shares
-            total_possible = int(self.balance / current_price)
+            total_possible = int(self.balance / self.current_price)
             shares_bought = int(total_possible * amount)
             prev_cost = self.cost_basis * self.shares_held
-            additional_cost = shares_bought * current_price
+            additional_cost = shares_bought * self.current_price
 
             self.balance -= additional_cost
             self.cost_basis = (
@@ -85,12 +82,12 @@ class StockTradingEnv(gym.Env):
             shares_sold = int(self.shares_held * amount)
             # print('vendo: ', shares_sold, 'amount ', amount, 'sheres held ', self.shares_held)
 
-            self.balance += shares_sold * current_price
+            self.balance += shares_sold * self.current_price
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
-            self.total_sales_value += shares_sold * current_price
+            self.total_sales_value += shares_sold * self.current_price
 
-        self.net_worth = self.balance + self.shares_held * current_price
+        self.net_worth = self.balance + self.shares_held * self.current_price
 
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
@@ -100,6 +97,9 @@ class StockTradingEnv(gym.Env):
 
     def step(self, action):
         # Execute one time step within the environment
+        print('share prima ', self.shares_held, 'price ',self.current_price)
+        print(action)
+
         self._take_action(action)
 
         self.current_step += 1
@@ -112,6 +112,7 @@ class StockTradingEnv(gym.Env):
         reward = self.balance * delay_modifier
 
         done = self.balance > 20000
+        print('share dopo ', self.shares_held, 'price ',self.current_price)
 
         obs = self._next_observation()
 

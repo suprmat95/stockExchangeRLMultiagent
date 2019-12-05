@@ -36,7 +36,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
         for i, action in action_dict.items():
-            obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, 0.1)
+            obs[i], rew[i], done[i], info[i] = self.agents[i].step_wrapper(action, self.price)
             delta_shares = (obs[i][5][2] - self.initial_shares[i])*MAX_NUM_SHARES
             self.price = self.price_function(self.price, delta_shares)
 
