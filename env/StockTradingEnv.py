@@ -30,6 +30,8 @@ class StockTradingEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(1 , 6), dtype=np.float16)
 
+        self.past_balance = 0
+
     def _next_observation(self):
 
         # Append additional data and scale each value to between 0-1
@@ -57,7 +59,7 @@ class StockTradingEnv(gym.Env):
             additional_cost = shares_bought * self.current_price
 
             self.balance -= additional_cost
-            print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+           # print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
 
             self.cost_basis = (
                 prev_cost + additional_cost) / (self.shares_held + shares_bought)
@@ -68,7 +70,7 @@ class StockTradingEnv(gym.Env):
             shares_sold = int(self.shares_held * amount)
 
             self.balance += shares_sold * self.current_price
-            print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+            #print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
 
             self.shares_held -= shares_sold
             self.total_shares_sold += shares_sold
@@ -95,11 +97,14 @@ class StockTradingEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
 
-        reward = self.balance * delay_modifier
+        reward = (self.balance - self.past_balance) * delay_modifier
+
 
         done = self.balance > 20000
 
         obs = self._next_observation()
+
+        self.past_balance = self.balance
 
         return obs, reward, done, {}
 
@@ -134,6 +139,7 @@ class StockTradingEnv(gym.Env):
     def step_wrapper(self, action, price, i):
         #print('i: ', i)
         self.current_price = price
+
 
         obs, rew, done, info = self.step(action)
 

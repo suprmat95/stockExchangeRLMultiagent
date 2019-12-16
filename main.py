@@ -33,6 +33,7 @@ register_env("test", lambda _: StockTradingMultiAgent(2))
 
 tune.run(
         "PPO",
+        stop={"episode_reward_mean": 10000000},
         config={
             "env":  "test",
             "num_gpus": 0,
