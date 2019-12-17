@@ -136,11 +136,14 @@ class StockTradingEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
-    def step_wrapper(self, action, price, i):
+    def step_wrapper(self, action, price, i, bids, asks):
         #print('i: ', i)
-        self.current_price = price
+        self.bids = bids
 
+        self.asks = asks
+
+        self.current_price = price
 
         obs, rew, done, info = self.step(action)
 
-        return obs, rew, done, info
+        return obs, rew, done, info, self.bids, self.asks
