@@ -19,36 +19,37 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.observation_space = gym.spaces.Discrete(2)
         self.action_space = gym.spaces.Discrete(2)
         self.resetted = False
-        self.price = random.randint(1, 100)
+        print('init')
+        self.price = random.randint(1, 10)
         self.num = num
-        self.initial_shares = np.zeros(num)
-        self.asks = {}
-        self.bids = {}
+        self.asks = np.empty((0,4))
+        self.bids = np.empty((0,4))
+        self.transaction = np.zeros((1,2))
+
+
+#
 
     def reset(self):
         #print('RESET ')
         self.resetted = True
         self.dones = set()
-        self.price = random.randint(1, 100)
-        self.initial_shares = np.zeros(self.num)
+        print("STEP ¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶")
+        self.price = random.randint(1, 10)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
         for i, action in action_dict.items():
-            obs[i], rew[i], done[i], info[i], self.bids, self.asks = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks)
-            delta_shares = (obs[i][0][2] - self.initial_shares[i])*MAX_NUM_SHARES
-            self.price = self.price_function(self.price, delta_shares)
-
-            self.initial_shares[i] = obs[i][0][2]
-            if done[i]:
-               # print('Fatto')
-                done["__all__"] = True
-
+            print('prima')
+            print(self.price)
+            if (np.isnan(action).any()):
+                print('è nan')
+            else:
+                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+                print('dopo')
+                print(self.price)
+                if done[i]:
+                   # print('Fatto')
+                    done["__all__"] = True
         return obs, rew, done, info
-
-    def price_function(self, initial_price, delta_shares):
-       # print('initial price: ', initial_price, 'second price: ', initial_price + (delta_shares )/initial_price, 'delta: ', delta_shares)
-
-        return initial_price + (delta_shares)/initial_price

@@ -24,13 +24,16 @@ class StockTradingEnv(gym.Env):
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
         self.action_space = spaces.Box(
-            low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16)
+            low=np.array([0, 0, -1]), high=np.array([3, 1, 1]), dtype=np.float16)
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(1 , 6), dtype=np.float16)
 
         self.past_balance = 0
+
+
+
 
     def _next_observation(self):
 
@@ -50,31 +53,141 @@ class StockTradingEnv(gym.Env):
         # Set the current price to a random price within the time step
         action_type = action[0]
         amount = action[1]
-
+        p_price = action[2]
+        #print('p_price: ')
+        #print(action[2])
+        #print('current price: ')
+        #print(self.current_price)
+        #print('price decurted: ')
+        #print(self.current_price*p_price/100)
+        #print('per')
+        #print(p_price)
+        #print('current price')
+        #print(self.current_price)
+        #print('movement price')
+        movement_price = self.current_price + self.current_price*p_price/100
+        #print(movement_price)
+        #print('delta')
+        #print(self.current_price * p_price / 100)
+        find = True
+        #print('movement price')
+        #print(movement_price)
+        #print('balance')
+        #print(self.balance)
+        total_possible = int(self.balance / movement_price)
         if action_type < 1:
             # Buy amount % of balance in shares
-            total_possible = int(self.balance / self.current_price)
-            shares_bought = int(total_possible * amount)
-            prev_cost = self.cost_basis * self.shares_held
-            additional_cost = shares_bought * self.current_price
+            #self.bids = np.append(self.bids, np.array([[self.i, action[0], action[1]]]), axis=0)
+            #print('Compro')
+            #print('asks number')
+            #print(self.asks.size)
+            #print('asks')
+            #print(self.asks)
+            # print(self.asks)
+            if self.asks.size > 0:
+                i = 0
+                for item in self.asks:
+                    if(item[0] != self.i ):
+                        #print('item asks: ')
+                        #print(float(item[0]))
+                        #print(float(item[1]))
+                        #print(float(item[2]))
+                        #print(float(item[3]))
 
-            self.balance -= additional_cost
-           # print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                        item_price = self.current_price + self.current_price*item[3]/100
 
-            self.cost_basis = (
-                prev_cost + additional_cost) / (self.shares_held + shares_bought)
-            self.shares_held += shares_bought
+
+                        #print('item_price: ')
+                        #print(item_price)
+                        #print('movement price')
+                        #print(movement_price)
+                        #print('item price')
+                        #print(item_price)
+                        if movement_price >= item_price:
+                            ##print('trovato asks')
+
+                            # print('itemprice ')
+                           # print(item_price)
+                            shares_bought = item[2]
+                            prev_cost = self.cost_basis * self.shares_held
+                            additional_cost = shares_bought * item_price
+                            self.balance -= additional_cost
+                            # print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                            self.cost_basis = (prev_cost + additional_cost) / (self.shares_held + shares_bought)
+                            self.shares_held += shares_bought
+                           # print('current prima')
+                           # print(self.current_price)
+                            self.current_price = item_price
+                            #print('curren dopo')
+                            ##print(self.current_price)
+                            #print('asks before: ')
+                            #print(self.asks)
+                            self.asks = np.delete(self.asks, [i], axis=0)
+                            #print('asks after: ')
+                            #print(self.asks)
+                            np.append(self.transaction, np.array([[self.i, shares_bought * item_price]]))
+                            find = False
+                            break
+                    i = i + 1
+        if(find):
+            # print('find')
+             self.bids = np.append(self.bids, [[self.i, action[0], total_possible * amount, action[2]]], axis=0)
+             #print('bids')
+             #print(self.bids)
 
         elif action_type < 2:
             # Sell amount % of shares held
-            shares_sold = int(self.shares_held * amount)
+            # self.bids = np.append(self.bids, np.array([[self.i, action[0], action[1]]]), axis=0)
+           # print('Vendo')
+            find = True
+           # print('bids number')
+           # print(self.bids.size)
+           # print('bids')
+           # print(self.bids)
+            if self.bids.size > 0:
+                i = 0
+                for item in self.bids:
+                    if(item[0] != self.i ):
 
-            self.balance += shares_sold * self.current_price
-            #print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                        item_price = self.current_price + self.current_price*item[3]/100
+                        if movement_price <= item_price:
+                            #print('trovato bids: ')
+                           # print('itemprice ')
+                           # print(item_price)
+                            #print('item bids: ')
+                            #print(float(item[0]))
+                            #print(float(item[1]))
+                            #print(float(item[2]))
+                            #print(float(item[3]))
+                            shares_sold = item[2]
+                            self.balance += shares_sold * item_price
+                            #print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                            self.shares_held -= shares_sold
+                            self.total_shares_sold += shares_sold
+                            self.total_sales_value += shares_sold * item_price
+                            #print('current prima')
+                            #print(self.current_price)
+                            self.current_price = item_price
+                            ##print('curren dopo')
+                            ##print(self.current_price)
+                            #print('bids before: ')
+                            #print(self.bids)
+                            self.bids = np.delete(self.bids, [i], axis=0)
+                            #print('bids after: ')
+                            #print(self.asks)
+                            #np.append(self.transaction, np.array([[self.i, shares_bought * item_price]]))
+                            find = False
+                            break
+                    i = i + 1
 
-            self.shares_held -= shares_sold
-            self.total_shares_sold += shares_sold
-            self.total_sales_value += shares_sold * self.current_price
+        if (find):
+            #print('find asks ')
+            self.asks = np.append(self.asks, [[self.i, action[0], self.shares_held * amount, action[2]]], axis=0)
+            self.shares_held -= int(self.shares_held * amount)
+            self.total_shares_sold += int(self.shares_held * amount)
+            #print('asks')
+            #print(self.asks)
+
 
         self.net_worth = self.balance + self.shares_held * self.current_price
 
@@ -86,26 +199,17 @@ class StockTradingEnv(gym.Env):
 
     def step(self, action):
         # Execute one time step within the environment
-
+        print('action')
+        print(action)
         self._take_action(action)
-
         self.current_step += 1
-
-
         if self.current_step > 5242:
             self.current_step = 0
-
         delay_modifier = (self.current_step / MAX_STEPS)
-
         reward = (self.balance - self.past_balance) * delay_modifier
-
-
         done = self.balance > 20000
-
         obs = self._next_observation()
-
         self.past_balance = self.balance
-
         return obs, reward, done, {}
 
     def reset(self):
@@ -136,14 +240,23 @@ class StockTradingEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
-    def step_wrapper(self, action, price, i, bids, asks):
+    def step_wrapper(self, action, price, i, bids, asks, transaction):
         #print('i: ', i)
-        self.bids = bids
 
-        self.asks = asks
+        self.bids = np.array(bids)
+
+        self.i = i
+
+        self.asks = np.array(asks)
 
         self.current_price = price
 
+        print('prima price')
+        print(self.current_price)
+        self.transaction = transaction
+
         obs, rew, done, info = self.step(action)
 
-        return obs, rew, done, info, self.bids, self.asks
+        print('dopo price')
+        print(self.current_price)
+        return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
