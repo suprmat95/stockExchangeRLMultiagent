@@ -18,7 +18,7 @@ from ray.rllib.tests.test_multi_agent_env import MultiCartpole
 import pandas as pd
 
 
-
+print('xixicxi')
 
 def select_policy(agent_id):
        if agent_id == "player1":
@@ -36,17 +36,17 @@ tune.run(
         config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 7,
+            "num_workers": 0,
             "eager_tracing": False,
             "eager": False,
             "simple_optimizer": True,
             "multiagent": {
                   "policies": {
                                    "pg_policy": (None,  spaces.Box(
-             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+            low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
                                    "random": (None,  spaces.Box(
-             low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
+            low=0, high=1, shape=(6, 6), dtype=np.float16),  spaces.Box(
             low=np.array([0, 0]), high=np.array([3, 1]), dtype=np.float16), {}),
                                },
                 "policy_mapping_fn": (

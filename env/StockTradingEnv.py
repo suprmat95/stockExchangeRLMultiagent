@@ -21,7 +21,7 @@ class StockTradingEnv(gym.Env):
     def __init__(self):
         super(StockTradingEnv, self).__init__()
 
-        self.df = pd.read_csv('/Users/matteo/PycharmProjects/Multi-Agent-Stock-Trading-Environment/data/AAPL.csv')
+        self.df = pd.read_csv('/Users/matteo/PycharmProjects/stockExchangeRLMultiagent/data/AAPL.csv')
         self.df = self.df.sort_values('Date')
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
