@@ -40,14 +40,14 @@ class StockTradingMultiAgent(MultiAgentEnv):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
         for i, action in action_dict.items():
-          #  print('prima')
-          #  print(self.price)
+            #print('prima')
+            #print(self.price)
             if (np.isnan(action).any()):
                 print('è nan')
             else:
                 obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
-             #   print('dopo')
-             #   print(self.price)
+                #print('dopo')
+                #print(self.price)
                 if done[i]:
                    # print('Fatto')
                     done["__all__"] = True
