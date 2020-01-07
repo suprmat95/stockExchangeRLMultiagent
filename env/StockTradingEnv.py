@@ -28,7 +28,7 @@ class StockTradingEnv(gym.Env):
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(1 , 6), dtype=np.float16)
+            low=0, high=1, shape=(1, 6), dtype=np.float16)
 
         self.past_balance = 0
 
@@ -85,16 +85,16 @@ class StockTradingEnv(gym.Env):
             #print(self.asks)
             # print(self.asks)
             if self.asks.size > 0:
-                i = 0
+                j = 0
                 for item in self.asks:
-                    if(item[0] != self.i ):
+                    if item[0] != self.i:
                         #print('item asks: ')
                         #print(float(item[0]))
                         #print(float(item[1]))
                         #print(float(item[2]))
                         #print(float(item[3]))
 
-                        item_price = self.current_price + self.current_price*item[3]/100
+                        item_price = item[3]
 
 
                         #print('item_price: ')
@@ -122,20 +122,21 @@ class StockTradingEnv(gym.Env):
                             ##print(self.current_price)
                             #print('asks before: ')
                             #print(self.asks)
-                            self.asks = np.delete(self.asks, [i], axis=0)
+                            self.asks = np.delete(self.asks, j, axis=0)
                             #print('asks after: ')
                             #print(self.asks)
-                            np.append(self.transaction, np.array([[self.i, shares_bought * item_price]]))
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_bought, shares_bought * item_price]], axis=0)
                             find = False
                             break
-                    i = i + 1
-        if(find):
+                    j = j + 1
+        elif(find):
             # print('find')
-             self.bids = np.append(self.bids, [[self.i, action[0], total_possible * amount, action[2]]], axis=0)
-             #print('bids')
+             self.bids = np.append(self.bids, [[self.i, action_type, total_possible * amount, movement_price]], axis=0)
+             self.balance -= movement_price
+        #print('bids')
              #print(self.bids)
 
-        elif action_type < 2:
+        if action_type < 2:
             # Sell amount % of shares held
             # self.bids = np.append(self.bids, np.array([[self.i, action[0], action[1]]]), axis=0)
            # print('Vendo')
@@ -145,46 +146,53 @@ class StockTradingEnv(gym.Env):
            # print('bids')
            # print(self.bids)
             if self.bids.size > 0:
-                i = 0
+                j = 0
                 for item in self.bids:
                     if(item[0] != self.i ):
-
-                        item_price = self.current_price + self.current_price*item[3]/100
+                        item_price = item[3]
                         if movement_price <= item_price:
-                            #print('trovato bids: ')
+                           # print('trovato bids: ')
                            # print('itemprice ')
                            # print(item_price)
-                            #print('item bids: ')
-                            #print(float(item[0]))
-                            #print(float(item[1]))
-                            #print(float(item[2]))
-                            #print(float(item[3]))
+                           # print('item bids: ')
+                           # print(float(item[0]))
+                           # print(float(item[1]))
+                           # print(float(item[2]))
+                           # print(float(item[3]))
                             shares_sold = item[2]
                             self.balance += shares_sold * item_price
-                            #print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                           # print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
                             self.shares_held -= shares_sold
                             self.total_shares_sold += shares_sold
                             self.total_sales_value += shares_sold * item_price
-                            #print('current prima')
-                            #print(self.current_price)
+                           # print('current prima')
+                           # print(self.current_price)
                             self.current_price = item_price
-                            ##print('curren dopo')
-                            ##print(self.current_price)
-                            #print('bids before: ')
-                            #print(self.bids)
-                            self.bids = np.delete(self.bids, [i], axis=0)
-                            #print('bids after: ')
-                            #print(self.asks)
-                            #np.append(self.transaction, np.array([[self.i, shares_bought * item_price]]))
+                           # print('curren dopo')
+                           # print(self.current_price)
+                            print('bids before: ')
+                            print(self.bids)
+                            print('size')
+                            print(self.bids.size)
+                            print('j: ')
+                            print(j)
+                            self.bids = np.delete(self.bids, j, 0)
+                            print('bids after: ')
+                            print(self.bids)
+                            print('size')
+                            print(self.bids.size)
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_sold, shares_sold * item_price]], axis=0)
                             find = False
                             break
-                    i = i + 1
+                    j = j + 1
 
-        if (find):
+        elif (find):
             #print('find asks ')
-            self.asks = np.append(self.asks, [[self.i, action[0], self.shares_held * amount, action[2]]], axis=0)
+
+            self.asks = np.append(self.asks, [[self.i, action_type, int(self.shares_held * amount), movement_price]], axis=0)
             self.shares_held -= int(self.shares_held * amount)
-            self.total_shares_sold += int(self.shares_held * amount)
+
+            #self.total_shares_sold += int(self.shares_held * amount)
             #print('asks')
             #print(self.asks)
 
@@ -251,12 +259,34 @@ class StockTradingEnv(gym.Env):
 
         self.current_price = price
 
-        print('prima price')
-        print(self.current_price)
+       # print('prima price')
+       # print(self.current_price)
         self.transaction = transaction
+        j = 0
+        print('transaction size: ')
+        print(self.transaction.size)
+        print('transaction')
+        print(self.transaction)
+        j = 0
+        for item in self.transaction:
+            agent_id = item[0]
+            action_type = item[1]
+            movement_price = item[3]
+            shares = item[2]
+            if agent_id == self.i:
+                print('entrato')
+                if action_type < 1:
+                    self.transaction = np.delete(self.transaction,[j], 0)
+                    self.shares_held += shares
 
+                if action_type < 2:
+                    self.total_shares_sold += shares
+                    self.balance += movement_price
+                    self.transaction = np.delete(self.transaction, [j], 0)
+
+            j += 1
         obs, rew, done, info = self.step(action)
 
-        print('dopo price')
-        print(self.current_price)
+       # print('dopo price')
+       # print(self.current_price)
         return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
