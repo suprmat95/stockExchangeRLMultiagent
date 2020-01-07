@@ -54,66 +54,29 @@ class StockTradingEnv(gym.Env):
         action_type = action[0]
         amount = action[1]
         p_price = action[2]
-        #print('p_price: ')
-        #print(action[2])
-        #print('current price: ')
-        #print(self.current_price)
-        #print('price decurted: ')
-        #print(self.current_price*p_price/100)
-        #print('per')
-        #print(p_price)
-        #print('current price')
-        #print(self.current_price)
-        #print('movement price')
         movement_price = self.current_price + self.current_price*p_price/100
-        #print('movement price')
-        #print(movement_price)
-        #print('delta')
-        #print(self.current_price * p_price / 100)
         find = True
-        #print('movement price')
-        #print(movement_price)
-        #print('balance')
-        #print(self.balance)
         total_possible = int(self.balance / movement_price)
         if action_type <= 1:
             # Buy amount % of balance in shares
-            #self.bids = np.append(self.bids, np.array([[self.i, action[0], action[1]]]), axis=0)
             print('Compro')
-            #print('asks number')
-            #print(self.asks.size)
-            #print('asks')
-            #print(self.asks)
-            # print(self.asks)
             if self.asks.size > 0:
                 j = 0
                 for item in self.asks:
-                    if item[0] != self.i :
-
+                    if item[0] != self.i:
                         item_price = item[3]
-
-
                         if movement_price >= item_price and self.balance >= item[3]*item[2] and find:
                             print('TROVATO ASK: ')
                             print(action_type)
                             shares_bought = item[2]
                             prev_cost = self.cost_basis * self.shares_held
-                            additional_cost = shares_bought * item_price
+                            additional_cost = item_price
                             self.balance -= additional_cost
-                            # print('compro: ', shares_bought, 'sheres held ', self.shares_held, ' balance: ', self.balance)
                             self.cost_basis = (prev_cost + additional_cost) / (self.shares_held + shares_bought)
                             self.shares_held += shares_bought
-                           # print('current prima')
-                           # print(self.current_price)
                             self.current_price = item_price
-                            #print('curren dopo')
-                            ##print(self.current_price)
-                            #print('asks before: ')
-                            #print(self.asks)
                             self.asks = np.delete(self.asks, j, axis=0)
-                            #print('asks after: ')
-                            #print(self.asks)
-                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_bought, shares_bought * item_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_bought,  item_price]], axis=0)
                             find = False
                             break
                     j = j + 1
@@ -124,43 +87,30 @@ class StockTradingEnv(gym.Env):
                 for item in self.bids:
                     if(item[0] != self.i ):
                         item_price = item[3]
-                        shares = item[2]
-                        if movement_price <= item_price and self.shares_held >= shares and find:
+                        shares_sold = item[2]
+                        if movement_price <= item_price and self.shares_held >= shares_sold and find:
                             print('TROVATO BIDS: ')
-                            print(action_type)
-                            shares_sold = item[2]
-                            self.balance += shares_sold * item_price
-                           # print('vendo: ', shares_sold, 'sheres held ', self.shares_held, ' balance: ', self.balance)
+                            print('bid:')
+                            print(item)
+                            self.balance += item_price
                             self.shares_held -= shares_sold
                             self.total_shares_sold += shares_sold
-                            self.total_sales_value += shares_sold * item_price
+                            self.total_sales_value += item_price
                             self.current_price = item_price
                             self.bids = np.delete(self.bids, j, 0)
-                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_sold, shares_sold * item_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_sold,  item_price]], axis=0)
                             find = False
                             break
                     j = j + 1
 
         if (find):
-            #print('find asks ')
             if action_type < 1:
-
-               # print('bids size')
-               # print(self.bids.size)
-               # print(self.bids.size)
-
                 self.bids = np.append(self.bids, [[self.i, action_type, int(total_possible * amount), movement_price]], axis=0)
                 self.balance -= movement_price * int(total_possible * amount)
             else:
-               # print('asks size')
-               # print(self.asks.size)
-
-               # print(self.asks.size)
                 self.asks = np.append(self.asks,[[self.i, action_type, int(self.shares_held * amount), movement_price]], axis=0)
                 self.shares_held -= int(self.shares_held * amount)
-
         self.net_worth = self.balance + self.shares_held * self.current_price
-
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
 
