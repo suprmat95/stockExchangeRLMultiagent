@@ -59,15 +59,15 @@ class StockTradingEnv(gym.Env):
         total_possible = int(self.balance / movement_price)
         if action_type <= 1:
             # Buy amount % of balance in shares
-            print('Compro')
+           # print('Compro')
             if self.asks.size > 0:
                 j = 0
                 for item in self.asks:
                     if item[0] != self.i:
                         item_price = item[3]
                         if movement_price >= item_price and self.balance >= item[3]*item[2] and find:
-                            print('TROVATO ASK: ')
-                            print(action_type)
+                           # print('TROVATO ASK: ')
+                           # print(action_type)
                             shares_bought = item[2]
                             prev_cost = self.cost_basis * self.shares_held
                             additional_cost = item_price
@@ -81,7 +81,7 @@ class StockTradingEnv(gym.Env):
                             break
                     j = j + 1
         elif action_type> 1 and action_type <= 2:
-            print('VENDO')
+           ## print('VENDO')
             if self.bids.size > 0:
                 j = 0
                 for item in self.bids:
@@ -89,9 +89,9 @@ class StockTradingEnv(gym.Env):
                         item_price = item[3]
                         shares_sold = item[2]
                         if movement_price <= item_price and self.shares_held >= shares_sold and find:
-                            print('TROVATO BIDS: ')
-                            print('bid:')
-                            print(item)
+                            #print('TROVATO BIDS: ')
+                            #print('bid:')
+                            #print(item)
                             self.balance += item_price
                             self.shares_held -= shares_sold
                             self.total_shares_sold += shares_sold
@@ -198,15 +198,15 @@ class StockTradingEnv(gym.Env):
 
             j += 1
 
-        print('_______________________________')
+        #print('_______________________________')
         #print('prima price')
         #print(self.current_price)
         obs, rew, done, info = self.step(action)
         #print('dopo price')
         #print(self.current_price)
-        print('balance')
-        print(self.balance)
-        print('_______________________________')
+        #print('balance')
+        #print(self.balance)
+        #print('_______________________________')
 
 
         return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
