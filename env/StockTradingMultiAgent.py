@@ -13,7 +13,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
 
     def __init__(self, num):
         super(StockTradingMultiAgent, self).__init__()
-
         self.agents = [StockTradingEnv() for _ in range(num)]
         self.dones = set()
         self.observation_space = gym.spaces.Discrete(2)
@@ -23,14 +22,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.asks = np.empty((0, 4))
         self.bids = np.empty((0, 4))
         self.transaction = np.empty((0, 4))
-
-
-#
-
     def reset(self):
-        print('RESET MASTER ')
         self.dones = set()
-        print("RESET ¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶")
         self.price = random.randint(1, 10)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
@@ -38,17 +31,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
         self.current_step = random.randint(0, 5242)
-        #print('STEP MAster')
         for i, action in action_dict.items():
-            #print('prima')
-            #print(self.price)
-            #if (np.isnan(action).any()):
-            #    print('è nan')
-            #else:
-                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.current_step)
-                #print('dopo')
-                #print(self.price)
-                if done[i]:
-                   # print('Fatto')
-                    done["__all__"] = True
+             obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.current_step)
+             if done[i]:
+                done["__all__"] = True
         return obs, rew, done, info
