@@ -160,8 +160,10 @@ class StockTradingEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
-    def step_wrapper(self, action, price, i, bids, asks, transaction):
+    def step_wrapper(self, action, price, i, bids, asks, transaction, current_step):
         #print('i: ', i)
+
+        self.current_step = current_step
 
         self.bids = np.array(bids)
 

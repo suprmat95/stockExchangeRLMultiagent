@@ -34,6 +34,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.dones = set()
         print("RESET ¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶")
         self.price = random.randint(1, 10)
+        self.current_step = random.randint(0, 5242)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
@@ -45,7 +46,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
             if (np.isnan(action).any()):
                 print('è nan')
             else:
-                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.current_step)
                 #print('dopo')
                 #print(self.price)
                 if done[i]:
