@@ -15,8 +15,6 @@ from env.StockTradingMultiAgent import StockTradingMultiAgent
 from env.StockTradingEnv import StockTradingEnv
 from ray.rllib.tests.test_multi_agent_env import MultiCartpole
 
-import pandas as pd
-
 
 
 
@@ -58,7 +56,7 @@ tune.run(
                                     low=np.array([0, 0, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: ["pg_policy", "random"][agent_id % 2]),
-                "policies_to_train": ["pg_policy","random"],
+                "policies_to_train": ["pg_policy", "random"],
 
             },
         })

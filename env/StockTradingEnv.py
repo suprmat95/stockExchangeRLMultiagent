@@ -9,7 +9,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 5242
+MAX_STEPS = 20000
 
 INITIAL_ACCOUNT_BALANCE = 10000
 
@@ -55,26 +55,31 @@ class StockTradingEnv(gym.Env):
         amount = action[1]
         p_price = action[2]
         movement_price = self.current_price + self.current_price*p_price/100
-        find = True
         total_possible = int(self.balance / movement_price)
+        movement_shares = self.balance * total_possible
+        find = True
         if action_type <= 1:
             # Buy amount % of balance in shares
            # print('Compro')
             if self.asks.size > 0:
                 j = 0
                 for item in self.asks:
+                    shares_price = item[3]
+                    shares_bought = item[2]
+                    shares_bought_min = shares_bought - (shares_bought * 0.1)/100
+                    shares_bought_max = shares_bought + (shares_bought * 0.1)/100
+                    additional_cost = movement_price * movement_shares
+
                     if item[0] != self.i:
-                        item_price = item[3]
-                        if movement_price >= item_price and self.balance >= item[3]*item[2] and find:
-                            shares_bought = item[2]
+                        if movement_price >= shares_price and self.balance >= additional_cost and movement_shares >= shares_bought_min and movement_shares <= shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
-                            additional_cost = item_price
                             self.balance -= additional_cost
+                            print(self.balance)
                             self.cost_basis = (prev_cost + additional_cost) / (self.shares_held + shares_bought)
                             self.shares_held += shares_bought
-                            self.current_price = item_price
+                            self.current_price = shares_price
                             self.asks = np.delete(self.asks, j, axis=0)
-                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_bought,  item_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_bought,  shares_price]], axis=0)
                             find = False
                             break
                     j = j + 1
@@ -82,27 +87,29 @@ class StockTradingEnv(gym.Env):
             if self.bids.size > 0:
                 j = 0
                 for item in self.bids:
-                    if(item[0] != self.i ):
-                        item_price = item[3]
-                        shares_sold = item[2]
-                        if movement_price <= item_price and self.shares_held >= shares_sold and find:
-                            self.balance += item_price
+                    shares_price = item[3]
+                    shares_sold = item[2]
+                    shares_sold_min = shares_sold - (shares_sold * 0.1) / 100
+                    shares_sold_max = shares_sold + (shares_sold * 0.1) / 100
+                    if item[0] != self.i:
+                        if movement_price <= shares_price and self.shares_held >= shares_sold and movement_shares >= shares_sold_min and movement_shares <= shares_sold_max and find:
+                            self.balance += shares_price
                             self.shares_held -= shares_sold
                             self.total_shares_sold += shares_sold
-                            self.total_sales_value += item_price
-                            self.current_price = item_price
+                            self.total_sales_value += shares_price
+                            self.current_price = shares_price
                             self.bids = np.delete(self.bids, j, 0)
-                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_sold,  item_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[self.i, action_type, shares_sold,  shares_price]], axis=0)
                             find = False
                             break
                     j = j + 1
 
         if (find):
             if action_type < 1:
-                self.bids = np.append(self.bids, [[self.i, action_type, int(total_possible * amount), movement_price]], axis=0)
+                self.bids = np.append(self.bids, [[self.i, action_type, movement_shares, movement_price]], axis=0)
                 self.balance -= movement_price * int(total_possible * amount)
             else:
-                self.asks = np.append(self.asks,[[self.i, action_type, int(self.shares_held * amount), movement_price]], axis=0)
+                self.asks = np.append(self.asks, [[self.i, action_type, int(self.shares_held * amount), movement_price]], axis=0)
                 self.shares_held -= int(self.shares_held * amount)
         self.net_worth = self.balance + self.shares_held * self.current_price
         if self.net_worth > self.max_net_worth:
@@ -129,13 +136,13 @@ class StockTradingEnv(gym.Env):
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
-        self.shares_held = 100
+        self.shares_held = 0
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
 
         # Set the current step to a random point within the data frame
-        self.current_step = random.randint(0, 5242)
+        self.current_step = random.randint(0, 20000)
 
         return self._next_observation()
 
@@ -163,15 +170,15 @@ class StockTradingEnv(gym.Env):
         for item in self.transaction:
             agent_id = item[0]
             action_type = item[1]
-            movement_price = item[3]
             shares = item[2]
+            movement_price = item[3]
             if agent_id == self.i:
                 if action_type <= 1:
-                    self.transaction = np.delete(self.transaction,[j], 0)
+                    self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += shares
                 elif action_type > 1 and action_type <= 2:
                     self.total_shares_sold += shares
-                    self.balance += movement_price*shares
+                    self.balance += movement_price * shares
                     self.transaction = np.delete(self.transaction, [j], 0)
 
             j += 1
