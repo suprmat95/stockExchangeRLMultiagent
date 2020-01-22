@@ -51,7 +51,7 @@ class StockTradingEnv(gym.Env):
         step_percent_price = action[2]
         step_price = self.current_price + self.current_price*step_percent_price/100
         step_total_possible = int(self.balance / step_price)
-        step_movement_shares = self.balance * step_total_possible
+        step_bought_shares = int(step_amount * step_total_possible)
         find = True
         print('fuori: ')
         print(self.balance)
@@ -67,7 +67,7 @@ class StockTradingEnv(gym.Env):
                     ask_shares_bought_max = ask_shares_bought + (ask_shares_bought * 0.1)/100
                     ask_shares_cost = ask_shares_price * ask_shares_bought
                     if item[0] != self.i:
-                        if step_price >= ask_shares_price and self.balance >= ask_shares_cost and step_movement_shares >= ask_shares_bought_min and step_movement_shares <= ask_shares_bought_max and find:
+                        if step_price >= ask_shares_price and self.balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
                             print(self.balance)
                             self.balance -= ask_shares_cost
@@ -81,6 +81,7 @@ class StockTradingEnv(gym.Env):
                             break
                     j = j + 1
         elif step_action_type > 1 and step_action_type <= 2:
+            step_sold_shares = int(step_amount * self.shares_held)
             if self.bids.size > 0:
                 j = 0
                 for item in self.bids:
@@ -89,7 +90,7 @@ class StockTradingEnv(gym.Env):
                     bids_shares_sold_min = bids_shares_sold - (bids_shares_sold * 0.1) / 100
                     bids_shares_sold_max = bids_shares_sold + (bids_shares_sold * 0.1) / 100
                     if item[0] != self.i:
-                        if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_movement_shares >= bids_shares_sold and step_movement_shares <= bids_shares_sold and find:
+                        if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_sold_shares >= bids_shares_sold and step_sold_shares <= bids_shares_sold and find:
                             self.balance += bids_shares_price * bids_shares_sold
                             self.shares_held -= bids_shares_sold
                             self.total_shares_sold += bids_shares_sold
@@ -100,10 +101,9 @@ class StockTradingEnv(gym.Env):
                             find = False
                             break
                     j = j + 1
-
         if (find):
             if step_action_type < 1:
-                self.bids = np.append(self.bids, [[self.i, step_action_type, step_movement_shares, step_price]], axis=0)
+                self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price]], axis=0)
                 self.balance -= step_price * int(step_total_possible * step_amount)
             else:
                 self.asks = np.append(self.asks, [[self.i, step_action_type, int(self.shares_held * step_amount), step_price]], axis=0)
