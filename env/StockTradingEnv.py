@@ -10,9 +10,7 @@ MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
 MAX_STEPS = 20000
-
 INITIAL_ACCOUNT_BALANCE = 10000
-
 
 class StockTradingEnv(gym.Env):
     """A stock trading environment for OpenAI gym"""
@@ -31,9 +29,6 @@ class StockTradingEnv(gym.Env):
             low=0, high=1, shape=(1, 6), dtype=np.float16)
 
         self.past_balance = 0
-
-
-
 
     def _next_observation(self):
 
@@ -101,7 +96,7 @@ class StockTradingEnv(gym.Env):
                             self.total_sales_value += bids_shares_price
                             self.current_price = bids_shares_price
                             self.bids = np.delete(self.bids, j, 0)
-                            self.transaction = np.append(self.transaction, [[self.i, step_action_type, bids_shares_sold,  bids_shares_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[self.i, step_action_type, bids_shares_sold, bids_shares_price]], axis=0)
                             find = False
                             break
                     j = j + 1
@@ -142,7 +137,6 @@ class StockTradingEnv(gym.Env):
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
-
         # Set the current step to a random point within the data frame
         self.current_step = random.randint(0, 20000)
 
@@ -170,19 +164,18 @@ class StockTradingEnv(gym.Env):
         self.transaction = transaction
         j = 0
         for item in self.transaction:
-            step_agent_id = item[0]
-            action_type = item[1]
-            shares = item[2]
-            movement_price = item[3]
-            if step_agent_id == self.i:
-                if action_type <= 1:
+            transaction_agent_id = item[0]
+            transaction_action_type = item[1]
+            transaction_shares = item[2]
+            transaction_price = item[3]
+            if transaction_agent_id == self.i:
+                if transaction_action_type <= 1:
                     self.transaction = np.delete(self.transaction, [j], 0)
-                    self.shares_held += shares
-                elif action_type > 1 and action_type <= 2:
-                    self.total_shares_sold += shares
-                    self.balance += movement_price * shares
+                    self.shares_held += transaction_shares
+                elif transaction_action_type > 1 and transaction_action_type <= 2:
+                    self.total_shares_sold += transaction_shares
+                    self.balance += transaction_price * transaction_shares
                     self.transaction = np.delete(self.transaction, [j], 0)
-
             j += 1
         obs, rew, done, info = self.step(action)
         return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
