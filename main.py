@@ -34,7 +34,7 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(2))
+register_env("test", lambda _: StockTradingMultiAgent(10))
 
 tune.run(
         "PPO",

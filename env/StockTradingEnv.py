@@ -53,8 +53,8 @@ class StockTradingEnv(gym.Env):
         step_total_possible = int(self.balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         find = True
-        print('fuori: ')
-        print(self.balance)
+       # print('fuori: ')
+       # print(self.balance)
         if step_action_type <= 1:
             # Buy step_amount % of balance in shares
            # print('Compro')
@@ -69,9 +69,9 @@ class StockTradingEnv(gym.Env):
                     if item[0] != self.i:
                         if step_price >= ask_shares_price and self.balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
-                            print(self.balance)
+                           # print(self.balance)
                             self.balance -= ask_shares_cost
-                            print(self.balance)
+                           # print(self.balance)
                             self.cost_basis = (prev_cost + ask_shares_cost) / (self.shares_held + ask_shares_bought)
                             self.shares_held += ask_shares_bought
                             self.current_price = ask_shares_price
@@ -133,7 +133,7 @@ class StockTradingEnv(gym.Env):
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
-        self.shares_held = 0
+        self.shares_held = 100
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
