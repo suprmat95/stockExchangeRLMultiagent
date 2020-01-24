@@ -22,17 +22,28 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.asks = np.empty((0, 4))
         self.bids = np.empty((0, 4))
         self.transaction = np.empty((0, 4))
+        self.steppps = 0
     def reset(self):
+        self.steppps = 0
+        self.asks = np.empty((0, 4))
+        self.bids = np.empty((0, 4))
+        self.transaction = np.empty((0, 4))
         self.dones = set()
-        self.price = random.randint(1, 10)
+        #self.price = random.randint(1, 10)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
         obs, rew, done, info, quantity = {}, {}, {}, {}, {}
         done["__all__"] = False
-        self.current_step = random.randint(0, 5242)
+       # print('price: ')
+       # print(self.price)
+        self.steppps += 1
+        if self.steppps > 200:
+            print('RESET: ')
+            print(self.steppps)
+            self.reset()
         for i, action in action_dict.items():
-             obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.current_step)
-             if done[i]:
+             obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+             if (done[i]):
                 done["__all__"] = True
         return obs, rew, done, info

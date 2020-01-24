@@ -34,11 +34,11 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(10))
+register_env("test", lambda _: StockTradingMultiAgent(2))
 
 tune.run(
         "PPO",
-        stop={"episode_reward_mean": 10000000},
+        stop={"episode_reward_mean": 10},
         config={
             "env":  "test",
             "num_gpus": 0,
@@ -50,10 +50,10 @@ tune.run(
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0, -1]), high=np.array([3, 2, 10]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0, -1]), high=np.array([3, 2, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: ["pg_policy", "random"][agent_id % 2]),
                 "policies_to_train": ["pg_policy", "random"],
