@@ -29,7 +29,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.bids = np.empty((0, 4))
         self.transaction = np.empty((0, 4))
         self.dones = set()
-        #self.price = random.randint(1, 10)
+        self.price = random.randint(1, 10)
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
@@ -37,13 +37,10 @@ class StockTradingMultiAgent(MultiAgentEnv):
         done["__all__"] = False
        # print('price: ')
        # print(self.price)
-        self.steppps += 1
-        if self.steppps > 200:
-            print('RESET: ')
-            print(self.steppps)
-            self.reset()
+
         for i, action in action_dict.items():
              obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
-             if (done[i]):
+             if (done[i] or self.steppps > 10):
                 done["__all__"] = True
+        self.steppps += 1
         return obs, rew, done, info
