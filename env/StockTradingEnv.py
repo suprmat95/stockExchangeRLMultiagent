@@ -4,6 +4,7 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
+import math
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
@@ -29,7 +30,7 @@ class StockTradingEnv(gym.Env):
             low=0, high=1, shape=(1, 6), dtype=np.float16)
 
         self.past_balance = 0
-
+        self.past_net_worth = 0
     def _next_observation(self):
 
         # Append additional data and scale each value to between 0-1
@@ -49,7 +50,15 @@ class StockTradingEnv(gym.Env):
         step_action_type = action[0]
         step_amount = action[1]
         step_percent_price = action[2]
+        #print('current price')
+        #print(self.current_price)
+        #print('step_percent_price')
+        #print(step_percent_price)
         step_price = self.current_price + self.current_price*step_percent_price/100
+        #print('Balance')
+        #print(self.balance)
+        #print('step price')
+        #print(step_price)
         step_total_possible = int(self.balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         find = True
@@ -81,13 +90,13 @@ class StockTradingEnv(gym.Env):
                             #print(self.balance)
                             #print('Ask')
                             self.balance -= ask_shares_cost
-                            print('ASK')
-                            print('BALANCE')
-                            print(self.balance)
+                            #print('ASK')
+                            #print('BALANCE')
+                            #print(self.balance)
                             self.cost_basis = (prev_cost + ask_shares_cost) / (self.shares_held + ask_shares_bought)
                             self.current_price = ask_shares_price
-                            print('Price: ')
-                            print(self.current_price)
+                            #print('Price: ')
+                            #print(self.current_price)
                             self.asks = np.delete(self.asks, j, axis=0)
                             self.transaction = np.append(self.transaction, [[self.i, step_action_type, ask_shares_bought,  ask_shares_price]], axis=0)
                             find = False
@@ -104,10 +113,10 @@ class StockTradingEnv(gym.Env):
                     bids_shares_sold_max = bids_shares_sold + (bids_shares_sold * 0.1)
                     if item[0] != self.i:
                         if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
-                            print('BIDS: ')
+                           # print('BIDS: ')
                             self.shares_held -= bids_shares_sold
-                            print('shares held')
-                            print(self.shares_held)
+                          #  print('shares held')
+                          #  print(self.shares_held#)
                             self.total_shares_sold += bids_shares_sold
                             self.total_sales_value += bids_shares_price
                             self.current_price = bids_shares_price
@@ -142,7 +151,9 @@ class StockTradingEnv(gym.Env):
         if self.current_step > MAX_STEPS:
             self.current_step = 0
         delay_modifier = (self.current_step / MAX_STEPS)
-        reward = self.net_worth * delay_modifier
+        reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+        #print('Reward')
+        #print(reward)
         #print('Balance: ')
         #print(self.balance)
         #print('shares')
@@ -150,7 +161,7 @@ class StockTradingEnv(gym.Env):
         done = self.net_worth >= 10 * INITIAL_ACCOUNT_BALANCE
         obs = self._next_observation()
         self.past_balance = self.balance
-
+        self.past_net_worth = self.net_worth
         return obs, reward, done, {}
 
     def reset(self):
@@ -205,10 +216,10 @@ class StockTradingEnv(gym.Env):
                     self.transaction = np.delete(self.transaction, [j], 0)
             j += 1
         obs, rew, done, info = self.step(action)
-        print('Agente: ')
-        print(self.i)
-        print('Net worth')
-        print(self.net_worth)
-        print('price')
-        print(self.current_price)
+       # print('Agente: ')
+       # print(self.i)
+       # print('Net worth')
+       # print(self.net_worth)
+       # print('price')
+       # print(self.current_price)
         return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
