@@ -10,7 +10,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 20
+MAX_STEPS = 400
 INITIAL_ACCOUNT_BALANCE = 10000
 
 class StockTradingEnv(gym.Env):
@@ -149,9 +149,12 @@ class StockTradingEnv(gym.Env):
         #print(self.balance)
         self.current_step += 1
         if self.current_step > MAX_STEPS:
+            self.render()
             self.current_step = 0
+
         delay_modifier = (self.current_step / MAX_STEPS)
-        reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+       # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+        reward = self.balance * delay_modifier
         #print('Reward')
         #print(reward)
         #print('Balance: ')
@@ -175,14 +178,14 @@ class StockTradingEnv(gym.Env):
         self.total_shares_sold = 0
         self.total_sales_value = 0
         # Set the current step to a random point within the data frame
-        self.current_step = random.randint(0, MAX_STEPS)
-
+        #self.current_step = random.randint(0, MAX_STEPS)
+        self.current_step = 0
         return self._next_observation()
 
     def render(self, mode='human', close=False):
         # Render the environment to the screen
         profit = self.net_worth - INITIAL_ACCOUNT_BALANCE
-
+        print(f'Agent: {self.i}')
         print(f'Step: {self.current_step}')
         print(f'Balance: {self.balance}')
         print(
