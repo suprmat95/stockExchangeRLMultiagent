@@ -155,8 +155,8 @@ class StockTradingEnv(gym.Env):
             self.current_step = 0
 
         delay_modifier = (self.current_step / MAX_STEPS)
-       # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
-        reward = self.balance * delay_modifier
+        reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+        #reward = self.balance * delay_modifier
         #print('Reward')
         #print(reward)
         #print('Balance: ')
