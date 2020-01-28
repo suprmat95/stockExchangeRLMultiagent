@@ -91,6 +91,9 @@ class StockTradingEnv(gym.Env):
                             #print('Ask')
                             self.balance -= ask_shares_cost
                             self.virtual_balance -= ask_shares_cost
+                            self.shares_held += ask_shares_bought
+                            self.virtual_shares_held += ask_shares_bought
+
                             #print('ASK')
                             #print('BALANCE')
                             #print(self.balance)
@@ -117,7 +120,10 @@ class StockTradingEnv(gym.Env):
                            # print('BIDS: ')
                             self.shares_held -= bids_shares_sold
                             self.virtual_shares_held -= bids_shares_sold
-                          #  print('shares held')
+                            self.balance += bids_shares_price * bids_shares_sold
+                            self.virtual_balance += bids_shares_price * bids_shares_sold
+
+                        #  print('shares held')
                           #  print(self.shares_held#)
                             self.total_shares_sold += bids_shares_sold
                             self.total_sales_value += bids_shares_price
@@ -191,6 +197,8 @@ class StockTradingEnv(gym.Env):
         # Render the environment to the screen
         profit = self.net_worth - INITIAL_ACCOUNT_BALANCE
         print(f'Agent: {self.i}')
+        print(f'Current price: {self.current_price}')
+
         print(f'Step: {self.current_step}')
         print(f'Balance: {self.balance}')
         print(
@@ -215,11 +223,13 @@ class StockTradingEnv(gym.Env):
             transaction_shares = item[2]
             transaction_price = item[3]
             if transaction_agent_id == self.i:
-                if transaction_action_type < 1:
+                if transaction_action_type <= 1:
                     self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += transaction_shares
                     self.virtual_shares_held += transaction_shares
-                elif transaction_action_type >= 1 and transaction_action_type < 2:
+                    self.balance -= transaction_price * transaction_shares
+                elif transaction_action_type > 1 and transaction_action_type < 2:
+                    self.shares_held -= transaction_shares
                     self.total_shares_sold += transaction_shares
                     self.balance += transaction_price * transaction_shares
                     self.virtual_balance += transaction_price * transaction_shares
