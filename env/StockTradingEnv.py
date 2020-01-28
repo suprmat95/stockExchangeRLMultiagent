@@ -59,7 +59,7 @@ class StockTradingEnv(gym.Env):
         #print(self.balance)
         #print('step price')
         #print(step_price)
-        step_total_possible = int(self.balance / step_price)
+        step_total_possible = int(self.virtual_balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         find = True
        # print('fuori: ')
@@ -84,12 +84,13 @@ class StockTradingEnv(gym.Env):
                         #print(ask_shares_price)
                         #print('ask_shares_bought')
                         #print(ask_shares_bought)
-                        if step_price >= ask_shares_price and self.balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
+                        if step_price >= ask_shares_price and self.virtual_balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
                             #print('BALANCE')
                             #print(self.balance)
                             #print('Ask')
                             self.balance -= ask_shares_cost
+                            self.virtual_balance -= ask_shares_cost
                             #print('ASK')
                             #print('BALANCE')
                             #print(self.balance)
@@ -115,6 +116,7 @@ class StockTradingEnv(gym.Env):
                         if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
                            # print('BIDS: ')
                             self.shares_held -= bids_shares_sold
+                            self.virtual_shares_held -= bids_shares_sold
                           #  print('shares held')
                           #  print(self.shares_held#)
                             self.total_shares_sold += bids_shares_sold
@@ -126,12 +128,12 @@ class StockTradingEnv(gym.Env):
                             break
                     j = j + 1
         if (find):
-            if step_action_type <= 1 and self.balance >= step_price * int(step_total_possible * step_amount):
+            if step_action_type <= 1 and self.virtual_balance >= step_price * int(step_total_possible * step_amount):
                 self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price]], axis=0)
-                self.balance -= step_price * int(step_total_possible * step_amount)
-            elif step_action_type > 1 and step_action_type <= 2 and self.shares_held >= int(self.shares_held * step_amount):
-                self.asks = np.append(self.asks, [[self.i, step_action_type, int(self.shares_held * step_amount), step_price]], axis=0)
-                self.shares_held -= int(self.shares_held * step_amount)
+                self.virtual_balance -= step_price * int(step_total_possible * step_amount)
+            elif step_action_type > 1 and step_action_type <= 2 and self.virtual_shares_held >= int(self.virtual_shares_held * step_amount):
+                self.asks = np.append(self.asks, [[self.i, step_action_type, int(self.virtual_shares_held * step_amount), step_price]], axis=0)
+                self.virtual_shares_held -= int(self.virtual_shares_held * step_amount)
         self.net_worth = self.balance + self.shares_held * self.current_price
         if self.net_worth > self.max_net_worth:
             self.max_net_worth = self.net_worth
@@ -171,9 +173,12 @@ class StockTradingEnv(gym.Env):
         # Reset the state of the environment to an initial state
         #print('REESETT')
         self.balance = INITIAL_ACCOUNT_BALANCE
+        self.virtual_balance = INITIAL_ACCOUNT_BALANCE
+
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.shares_held = 100
+        self.virtual_shares_held = 100
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
@@ -213,9 +218,11 @@ class StockTradingEnv(gym.Env):
                 if transaction_action_type < 1:
                     self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += transaction_shares
+                    self.virtual_shares_held += transaction_shares
                 elif transaction_action_type >= 1 and transaction_action_type < 2:
                     self.total_shares_sold += transaction_shares
                     self.balance += transaction_price * transaction_shares
+                    self.virtual_balance += transaction_price * transaction_shares
                     self.transaction = np.delete(self.transaction, [j], 0)
             j += 1
         obs, rew, done, info = self.step(action)
