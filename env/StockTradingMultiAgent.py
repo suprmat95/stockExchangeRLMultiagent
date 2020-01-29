@@ -27,7 +27,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.steppps = 0
         self.asks = np.empty((0, 4))
         self.bids = np.empty((0, 4))
-        self.transaction = np.empty((0, 4))
+        self.transaction = np.empty((0, 5))
         self.dones = set()
         self.price = random.randint(1, 10)
         return {i: a.reset() for i, a in enumerate(self.agents)}

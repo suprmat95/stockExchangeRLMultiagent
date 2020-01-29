@@ -86,7 +86,7 @@ class StockTradingEnv(gym.Env):
                             self.ts = np.append(self.ts, [ [step_action_type, ask_agent, ask_shares_bought, ask_shares_price]],    axis=0)
 
                             self.asks = np.delete(self.asks, j, axis=0)
-                            self.transaction = np.append(self.transaction, [[ask_agent, step_action_type, ask_shares_bought,  ask_shares_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[ask_agent, step_action_type, ask_shares_bought,  ask_shares_price, self.i]], axis=0)
                             find = False
                             break
                     j = j + 1
@@ -119,7 +119,7 @@ class StockTradingEnv(gym.Env):
                             self.ts = np.append(self.ts, [ [step_action_type, bids_agent, bids_shares_sold, bids_shares_price]],    axis=0)
 
                             self.bids = np.delete(self.bids, j, 0)
-                            self.transaction = np.append(self.transaction, [[bids_agent, step_action_type, bids_shares_sold, bids_shares_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[bids_agent, step_action_type, bids_shares_sold, bids_shares_price, self.i]], axis=0)
                             find = False
                             break
                     j = j + 1
@@ -200,10 +200,12 @@ class StockTradingEnv(gym.Env):
             transaction_action_type = item[1]
             transaction_shares = item[2]
             transaction_price = item[3]
+
+
             if transaction_agent_id == self.i:
                 if transaction_action_type >= 1 and transaction_action_type < 2:
                     #df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares],'Prezzo:': [transaction_price]})
-                    self.ts = np.append(self.ts, [[transaction_action_type, transaction_shares, transaction_shares, transaction_price]], axis=0)
+                    self.ts = np.append(self.ts, [[transaction_action_type, item[4], transaction_shares, transaction_price]], axis=0)
                     self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += transaction_shares
                     self.virtual_shares_held += transaction_shares
@@ -217,7 +219,7 @@ class StockTradingEnv(gym.Env):
                    # df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares], 'Prezzo:': [transaction_price]})
                    # self.df = pd.concat([self.df, df2])
 
-                    self.ts = np.append(self.ts, [[transaction_action_type, transaction_shares, transaction_shares, transaction_price]], axis=0)
+                    self.ts = np.append(self.ts, [[transaction_action_type, item[4], transaction_shares, transaction_price]], axis=0)
 
                     self.transaction = np.delete(self.transaction, [j], 0)
             j += 1
