@@ -77,14 +77,7 @@ class StockTradingEnv(gym.Env):
                             self.virtual_shares_held += ask_shares_bought
                             self.cost_basis = (prev_cost + ask_shares_cost) / (self.shares_held + ask_shares_bought)
                             self.current_price = ask_shares_price
-                         #   ts2 = np.array([step_action_type, ask_agent, ask_shares_bought, ask_shares_price])
-                         #   self.ts = np.concatenate((self.ts, ts2), axis=0)
-                            #df2 = pd.DataFrame({'Tipo': [step_action_type], 'Con': [ask_agent], 'Quantità': [ask_shares_bought], 'Prezzo:': [ask_shares_price]})
-                            #self.df = pd.concat([self.df, df2])
-                            #print('Price: ')
-                            #print(self.current_price)
                             self.ts = np.append(self.ts, [ [step_action_type, ask_agent, ask_shares_bought, ask_shares_price]],    axis=0)
-
                             self.asks = np.delete(self.asks, j, axis=0)
                             self.transaction = np.append(self.transaction, [[ask_agent, step_action_type, ask_shares_bought,  ask_shares_price, self.i]], axis=0)
                             find = False
@@ -102,7 +95,7 @@ class StockTradingEnv(gym.Env):
                     bids_shares_sold_min = bids_shares_sold - (bids_shares_sold * 0.1)
                     bids_shares_sold_max = bids_shares_sold + (bids_shares_sold * 0.1)
                     if bids_agent != self.i:
-                        if step_price <= bids_shares_price and self.virtual_shares_held > bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
+                        if step_price <= bids_shares_price and self.shares_held > bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
                            # print('BIDS: ')
 
                             self.shares_held -= bids_shares_sold
@@ -112,12 +105,7 @@ class StockTradingEnv(gym.Env):
                             self.total_shares_sold += bids_shares_sold
                             self.total_sales_value += bids_shares_price
                             self.current_price = bids_shares_price
-                           # df2 = pd.DataFrame({'Tipo': [step_action_type], 'Con': [bids_agent], 'Quantità': [bids_shares_sold],'Prezzo:': [bids_shares_price]})
-                           # pd.concat([self.df, df2])
-                           ## ts2 = np.array([step_action_type, bids_agent, bids_shares_sold, bids_shares_price])
-                           ## self.ts = np.concatenate((self.ts, ts2), axis=0)
                             self.ts = np.append(self.ts, [ [step_action_type, bids_agent, bids_shares_sold, bids_shares_price]],    axis=0)
-
                             self.bids = np.delete(self.bids, j, 0)
                             self.transaction = np.append(self.transaction, [[bids_agent, step_action_type, bids_shares_sold, bids_shares_price, self.i]], axis=0)
                             find = False
@@ -147,7 +135,8 @@ class StockTradingEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
        # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
-        reward = self.balance * delay_modifier
+      #  reward = self.balance * delay_modifier
+        reward = (self.balance - self.past_balance) * delay_modifier
         done = self.net_worth >= 10 * INITIAL_ACCOUNT_BALANCE
         obs = self._next_observation()
         self.past_balance = self.balance
@@ -167,9 +156,6 @@ class StockTradingEnv(gym.Env):
         self.total_shares_sold = 0
         self.total_sales_value = 0
         self.ts = [[0, 0, 0, 0]]
-
-        # Set the current step to a random point within the data frame
-        #self.current_step = random.randint(0, MAX_STEPS)
         self.current_step = 0
         return self._next_observation()
 
@@ -201,27 +187,19 @@ class StockTradingEnv(gym.Env):
             transaction_action_type = item[1]
             transaction_shares = item[2]
             transaction_price = item[3]
-
-
             if transaction_agent_id == self.i:
                 if transaction_action_type >= 1 and transaction_action_type < 2:
-                    #df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares],'Prezzo:': [transaction_price]})
                     self.ts = np.append(self.ts, [[transaction_action_type, item[4], transaction_shares, transaction_price]], axis=0)
                     self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += transaction_shares
                     self.virtual_shares_held += transaction_shares
                     self.balance -= transaction_price * transaction_shares
                 elif transaction_action_type < 1:
-
                     self.shares_held -= transaction_shares
                     self.total_shares_sold += transaction_shares
                     self.balance += transaction_price * transaction_shares
                     self.virtual_balance += transaction_price * transaction_shares
-                   # df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares], 'Prezzo:': [transaction_price]})
-                   # self.df = pd.concat([self.df, df2])
-
                     self.ts = np.append(self.ts, [[transaction_action_type, item[4], transaction_shares, transaction_price]], axis=0)
-
                     self.transaction = np.delete(self.transaction, [j], 0)
             j += 1
         obs, rew, done, info = self.step(action)
