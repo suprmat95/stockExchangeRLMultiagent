@@ -10,7 +10,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 400
+MAX_STEPS = 10
 INITIAL_ACCOUNT_BALANCE = 10000
 
 class StockTradingEnv(gym.Env):
@@ -51,94 +51,83 @@ class StockTradingEnv(gym.Env):
         step_action_type = action[0]
         step_amount = action[1]
         step_percent_price = action[2]
-        #print('current price')
-        #print(self.current_price)
-        #print('step_percent_price')
-        #print(step_percent_price)
         step_price = self.current_price + self.current_price*step_percent_price/100
-        #print('Balance')
-        #print(self.balance)
-        #print('step price')
-        #print(step_price)
+
         step_total_possible = int(self.virtual_balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         find = True
-       # print('fuori: ')
-       # print(self.balance)
-       # print('step action')
-       # print(step_action_type)
-        if step_action_type <= 1:
+        if step_action_type < 1:
             # Buy step_amount % of balance in shares
            # print('Compro')
-            if self.asks.size >= 0:
+            if self.asks.size > 0:
                 j = 0
                 for item in self.asks:
+                    ask_agent = item[0]
                     ask_shares_price = item[3]
                     ask_shares_bought = item[2]
                     ask_shares_bought_min = ask_shares_bought - (ask_shares_bought * 0.1)
                     ask_shares_bought_max = ask_shares_bought + (ask_shares_bought * 0.1)
                     ask_shares_cost = ask_shares_price * ask_shares_bought
-                    if item[0] != self.i:
-                        #print('Step price')
-                        #print(step_price)
-                        #print('ask_shares_price')
-                        #print(ask_shares_price)
-                        #print('ask_shares_bought')
-                        #print(ask_shares_bought)
+                    if ask_agent != self.i:
                         if step_price >= ask_shares_price and self.virtual_balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
-                            #print('BALANCE')
-                            #print(self.balance)
-                            #print('Ask')
                             self.balance -= ask_shares_cost
                             self.virtual_balance -= ask_shares_cost
                             self.shares_held += ask_shares_bought
                             self.virtual_shares_held += ask_shares_bought
-
-                            #print('ASK')
-                            #print('BALANCE')
-                            #print(self.balance)
                             self.cost_basis = (prev_cost + ask_shares_cost) / (self.shares_held + ask_shares_bought)
                             self.current_price = ask_shares_price
+                         #   ts2 = np.array([step_action_type, ask_agent, ask_shares_bought, ask_shares_price])
+                         #   self.ts = np.concatenate((self.ts, ts2), axis=0)
+                            #df2 = pd.DataFrame({'Tipo': [step_action_type], 'Con': [ask_agent], 'Quantità': [ask_shares_bought], 'Prezzo:': [ask_shares_price]})
+                            #self.df = pd.concat([self.df, df2])
                             #print('Price: ')
                             #print(self.current_price)
+                            self.ts = np.append(self.ts, [ [step_action_type, ask_agent, ask_shares_bought, ask_shares_price]],    axis=0)
+
                             self.asks = np.delete(self.asks, j, axis=0)
-                            self.transaction = np.append(self.transaction, [[self.i, step_action_type, ask_shares_bought,  ask_shares_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[ask_agent, step_action_type, ask_shares_bought,  ask_shares_price]], axis=0)
                             find = False
                             break
                     j = j + 1
         elif step_action_type >= 1 and step_action_type < 2:
+            #VENDO
             step_sold_shares = int(step_amount * self.shares_held)
             if self.bids.size > 0:
                 j = 0
                 for item in self.bids:
+                    bids_agent = item[0]
                     bids_shares_price = item[3]
                     bids_shares_sold = item[2]
                     bids_shares_sold_min = bids_shares_sold - (bids_shares_sold * 0.1)
                     bids_shares_sold_max = bids_shares_sold + (bids_shares_sold * 0.1)
-                    if item[0] != self.i:
+                    if bids_agent != self.i:
                         if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
                            # print('BIDS: ')
+
                             self.shares_held -= bids_shares_sold
                             self.virtual_shares_held -= bids_shares_sold
                             self.balance += bids_shares_price * bids_shares_sold
                             self.virtual_balance += bids_shares_price * bids_shares_sold
-
-                        #  print('shares held')
-                          #  print(self.shares_held#)
                             self.total_shares_sold += bids_shares_sold
                             self.total_sales_value += bids_shares_price
                             self.current_price = bids_shares_price
+                           # df2 = pd.DataFrame({'Tipo': [step_action_type], 'Con': [bids_agent], 'Quantità': [bids_shares_sold],'Prezzo:': [bids_shares_price]})
+                           # pd.concat([self.df, df2])
+                           ## ts2 = np.array([step_action_type, bids_agent, bids_shares_sold, bids_shares_price])
+                           ## self.ts = np.concatenate((self.ts, ts2), axis=0)
+                            self.ts = np.append(self.ts, [ [step_action_type, bids_agent, bids_shares_sold, bids_shares_price]],    axis=0)
+
                             self.bids = np.delete(self.bids, j, 0)
-                            self.transaction = np.append(self.transaction, [[self.i, step_action_type, bids_shares_sold, bids_shares_price]], axis=0)
+                            self.transaction = np.append(self.transaction, [[bids_agent, step_action_type, bids_shares_sold, bids_shares_price]], axis=0)
                             find = False
                             break
                     j = j + 1
         if (find):
-            if step_action_type <= 1 and self.virtual_balance >= step_price * int(step_total_possible * step_amount):
+            if step_action_type < 1 and self.virtual_balance >= step_price * int(step_total_possible * step_amount):
                 self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price]], axis=0)
                 self.virtual_balance -= step_price * int(step_total_possible * step_amount)
-            elif step_action_type > 1 and step_action_type <= 2 and self.virtual_shares_held >= int(self.virtual_shares_held * step_amount):
+            elif step_action_type >= 1 and step_action_type < 2 and self.virtual_shares_held >= int(self.virtual_shares_held * step_amount):
                 self.asks = np.append(self.asks, [[self.i, step_action_type, int(self.virtual_shares_held * step_amount), step_price]], axis=0)
                 self.virtual_shares_held -= int(self.virtual_shares_held * step_amount)
         self.net_worth = self.balance + self.shares_held * self.current_price
@@ -151,11 +140,6 @@ class StockTradingEnv(gym.Env):
     def step(self, action):
         # Execute one time step within the environment
         self._take_action(action)
-        #print('STEEEEP')
-        #print('current step')
-        #print(self.current_step)
-        #print('balance: ')
-        #print(self.balance)
         self.current_step += 1
         if self.current_step > MAX_STEPS:
             self.render()
@@ -163,13 +147,6 @@ class StockTradingEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
         reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
-        #reward = self.balance * delay_modifier
-        #print('Reward')
-        #print(reward)
-        #print('Balance: ')
-        #print(self.balance)
-        #print('shares')
-        #print(self.shares_held)
         done = self.net_worth >= 10 * INITIAL_ACCOUNT_BALANCE
         obs = self._next_observation()
         self.past_balance = self.balance
@@ -181,7 +158,6 @@ class StockTradingEnv(gym.Env):
         #print('REESETT')
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.virtual_balance = INITIAL_ACCOUNT_BALANCE
-
         self.net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.shares_held = 100
@@ -189,6 +165,8 @@ class StockTradingEnv(gym.Env):
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
+        self.ts = [[0,0,0,0]]
+
         # Set the current step to a random point within the data frame
         #self.current_step = random.randint(0, MAX_STEPS)
         self.current_step = 0
@@ -199,7 +177,6 @@ class StockTradingEnv(gym.Env):
         profit = self.net_worth - INITIAL_ACCOUNT_BALANCE
         print(f'Agent: {self.i}')
         print(f'Current price: {self.current_price}')
-
         print(f'Step: {self.current_step}')
         print(f'Balance: {self.balance}')
         print(
@@ -209,11 +186,11 @@ class StockTradingEnv(gym.Env):
         print(
             f'Net worth: {self.net_worth} (Max net worth: {self.max_net_worth})')
         print(f'Profit: {profit}')
+        print(f'Transaction:')
+        print(self.ts)
     def step_wrapper(self, action, price, i, bids, asks, transaction):
         self.bids = np.array(bids)
         self.i = i
-       # print('Indice: ')
-       # print(self.i)
         self.asks = np.array(asks)
         self.current_price = price
         self.transaction = transaction
@@ -224,23 +201,25 @@ class StockTradingEnv(gym.Env):
             transaction_shares = item[2]
             transaction_price = item[3]
             if transaction_agent_id == self.i:
-                if transaction_action_type <= 1:
+                if transaction_action_type >= 1 and transaction_action_type < 2:
+                    #df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares],'Prezzo:': [transaction_price]})
+                    self.ts = np.append(self.ts, [[transaction_action_type, transaction_shares, transaction_shares, transaction_price]], axis=0)
                     self.transaction = np.delete(self.transaction, [j], 0)
                     self.shares_held += transaction_shares
                     self.virtual_shares_held += transaction_shares
                     self.balance -= transaction_price * transaction_shares
-                elif transaction_action_type > 1 and transaction_action_type < 2:
+                elif transaction_action_type < 1:
+
                     self.shares_held -= transaction_shares
                     self.total_shares_sold += transaction_shares
                     self.balance += transaction_price * transaction_shares
                     self.virtual_balance += transaction_price * transaction_shares
+                   # df2 = pd.DataFrame({'Tipo': [transaction_action_type], 'Con': [transaction_shares], 'Quantità': [transaction_shares], 'Prezzo:': [transaction_price]})
+                   # self.df = pd.concat([self.df, df2])
+
+                    self.ts = np.append(self.ts, [[transaction_action_type, transaction_shares, transaction_shares, transaction_price]], axis=0)
+
                     self.transaction = np.delete(self.transaction, [j], 0)
             j += 1
         obs, rew, done, info = self.step(action)
-       # print('Agente: ')
-       # print(self.i)
-       # print('Net worth')
-       # print(self.net_worth)
-       # print('price')
-       # print(self.current_price)
         return obs, rew, done, info, self.bids, self.asks, self.current_price, self.transaction
