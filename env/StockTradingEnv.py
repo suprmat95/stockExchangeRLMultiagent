@@ -10,7 +10,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 10
+MAX_STEPS = 100
 INITIAL_ACCOUNT_BALANCE = 10000
 
 class StockTradingEnv(gym.Env):
@@ -69,7 +69,7 @@ class StockTradingEnv(gym.Env):
                     ask_shares_bought_max = ask_shares_bought + (ask_shares_bought * 0.1)
                     ask_shares_cost = ask_shares_price * ask_shares_bought
                     if ask_agent != self.i:
-                        if step_price >= ask_shares_price and self.virtual_balance >= ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
+                        if step_price >= ask_shares_price and self.virtual_balance > ask_shares_cost and step_bought_shares >= ask_shares_bought_min and step_bought_shares <= ask_shares_bought_max and find:
                             prev_cost = self.cost_basis * self.shares_held
                             self.balance -= ask_shares_cost
                             self.virtual_balance -= ask_shares_cost
@@ -102,7 +102,7 @@ class StockTradingEnv(gym.Env):
                     bids_shares_sold_min = bids_shares_sold - (bids_shares_sold * 0.1)
                     bids_shares_sold_max = bids_shares_sold + (bids_shares_sold * 0.1)
                     if bids_agent != self.i:
-                        if step_price <= bids_shares_price and self.shares_held >= bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
+                        if step_price <= bids_shares_price and self.virtual_shares_held > bids_shares_sold and step_sold_shares >= bids_shares_sold_min and step_sold_shares <= bids_shares_sold_max and find:
                            # print('BIDS: ')
 
                             self.shares_held -= bids_shares_sold
@@ -146,7 +146,8 @@ class StockTradingEnv(gym.Env):
             self.current_step = 0
 
         delay_modifier = (self.current_step / MAX_STEPS)
-        reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+       # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
+        reward = self.balance * delay_modifier
         done = self.net_worth >= 10 * INITIAL_ACCOUNT_BALANCE
         obs = self._next_observation()
         self.past_balance = self.balance
@@ -165,7 +166,7 @@ class StockTradingEnv(gym.Env):
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
-        self.ts = [[0,0,0,0]]
+        self.ts = [[0, 0, 0, 0]]
 
         # Set the current step to a random point within the data frame
         #self.current_step = random.randint(0, MAX_STEPS)

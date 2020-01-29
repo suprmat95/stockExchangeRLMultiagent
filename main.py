@@ -16,13 +16,38 @@ from env.StockTradingEnv import StockTradingEnv
 from ray.rllib.tests.test_multi_agent_env import MultiCartpole
 
 
-print('xixicxi')
+class Random(Policy):
+    def __init__(self, observation_space, action_space, config):
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.action_space.seed(2)
+    def compute_actions(self,
+                        obs_batch,
+                        state_batches,
+                        prev_action_batch=None,
+                        prev_reward_batch=None,
+                        info_batch=None,
+                        episodes=None,
+                        **kwargs):
+        return [self.action_space.sample() for _ in obs_batch], [], {}
+
+    def learn_on_batch(self, samples):
+        """No learning."""
+        # return {}
+        pass
+
+    def get_weights(self):
+        pass
+
+    def set_weights(self, weights):
+        pass
+
 
 def select_policy(agent_id):
-       if agent_id == "player1":
-           return "default_policy"
+       if agent_id == 0:
+           return "pg_policy"
        else:
-           return random.choice(["default_policy", "default_policy"])
+           return "random"
 
 
 #asks = np.empty((0,4))
@@ -34,7 +59,7 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(3))
+register_env("test", lambda _: StockTradingMultiAgent(5))
 
 tune.run(
         "PPO",
@@ -53,8 +78,8 @@ tune.run(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
                               },
-                "policy_mapping_fn": (lambda agent_id: ["pg_policy", "random"][agent_id % 2]),
-                "policies_to_train": ["pg_policy", "random"],
+                "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
+                "policies_to_train": ["pg_policy"],
 
             },
         })

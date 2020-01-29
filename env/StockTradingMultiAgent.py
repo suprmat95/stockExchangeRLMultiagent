@@ -40,7 +40,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
 
         for i, action in action_dict.items():
              obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
-             if (done[i] or self.steppps > 10):
+             if (done[i] or self.steppps > 100):
                 done["__all__"] = True
         self.steppps += 1
 
