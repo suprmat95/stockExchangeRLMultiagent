@@ -39,9 +39,12 @@ class StockTradingMultiAgent(MultiAgentEnv):
        # print(self.price)
 
         for i, action in action_dict.items():
-             obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
-             if (done[i] or self.steppps > 100):
-                done["__all__"] = True
+             if np.isnan(action).any() == False:
+               obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+            # if (done[i] or self.steppps > 100):
+        if (self.steppps > 100):
+            print('Fuori ')
+            done["__all__"] = True
         self.steppps += 1
 
         return obs, rew, done, info
