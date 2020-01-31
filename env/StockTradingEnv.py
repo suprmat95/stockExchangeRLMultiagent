@@ -10,7 +10,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 MAX_OPEN_POSITIONS = 5
-MAX_STEPS = 100
+MAX_STEPS = 1000
 INITIAL_ACCOUNT_BALANCE = 10000
 
 class StockTradingEnv(gym.Env):
@@ -29,7 +29,7 @@ class StockTradingEnv(gym.Env):
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
             low=0, high=1, shape=(1, 6), dtype=np.float16)
-
+        self.max_balance = INITIAL_ACCOUNT_BALANCE
         self.past_balance = 0
         self.past_net_worth = 0
     def _next_observation(self):
@@ -142,11 +142,19 @@ class StockTradingEnv(gym.Env):
             self.current_step = 0
         self.current_step += 1
 
+
         delay_modifier = (self.current_step / MAX_STEPS)
        # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
       #  reward = self.balance * delay_modifier
         reward = (self.balance - self.past_balance) * delay_modifier
-        done = self.balance >=  INITIAL_ACCOUNT_BALANCE + 1000
+        if self.i == 0 and self.balance > self.max_balance:
+            self.max_balance = self.balance
+            print(f'Max Balance {self.max_balance}')
+            reward += 20
+        done = self.balance >= INITIAL_ACCOUNT_BALANCE + 1000
+        if done:
+            print('Obiettivo raggiunto: ')
+            self.render()
         obs = self._next_observation()
         self.past_balance = self.balance
         self.past_net_worth = self.net_worth
