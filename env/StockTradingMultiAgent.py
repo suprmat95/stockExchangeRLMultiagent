@@ -21,14 +21,14 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.action_space = gym.spaces.Discrete(2)
         self.price = random.randint(1, 10)
         self.num = num
-        self.asks = np.empty((0, 4))
-        self.bids = np.empty((0, 4))
+        self.asks = np.empty((0, 5))
+        self.bids = np.empty((0, 5))
         self.transaction = np.empty((0, 4))
         self.steppps = 0
     def reset(self):
         self.steppps = 0
-        self.asks = np.empty((0, 4))
-        self.bids = np.empty((0, 4))
+        self.asks = np.empty((0, 5))
+        self.bids = np.empty((0, 5))
         self.transaction = np.empty((0, 5))
         self.dones = set()
         self.price = random.randint(1, 10)
@@ -43,12 +43,13 @@ class StockTradingMultiAgent(MultiAgentEnv):
 
         for i, action in action_dict.items():
             if np.isnan(action).any() == False:
-                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.num)
                 self.prices.append(self.price)
             # if (done[i] or self.steppps > 100):
-        if (self.steppps > 1000 or done[i]):
+        if (self.steppps > 500 or done[i]):
             #  print('Fuori ')
             plt.figure(figsize=(10, 5))
+            plt.title('Price')
             plt.plot(range(0, len(self.prices)),self.prices)
             plt.show(block = False)
             plt.show()

@@ -73,10 +73,10 @@ tune.run(
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.2, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
                 "policies_to_train": ["pg_policy"],
