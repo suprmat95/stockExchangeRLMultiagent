@@ -6,6 +6,8 @@ from ray.rllib.utils import try_import_tf
 import numpy as np
 from env.StockTradingEnv import StockTradingEnv
 from gym import spaces
+import matplotlib.pyplot as plt
+
 MAX_NUM_SHARES = 2147483647
 
 
@@ -30,6 +32,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.transaction = np.empty((0, 5))
         self.dones = set()
         self.price = random.randint(1, 10)
+        self.prices = []
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
@@ -39,11 +42,16 @@ class StockTradingMultiAgent(MultiAgentEnv):
        # print(self.price)
 
         for i, action in action_dict.items():
-             if np.isnan(action).any() == False:
-               obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+            if np.isnan(action).any() == False:
+                obs[i], rew[i], done[i], info[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction)
+                self.prices.append(self.price)
             # if (done[i] or self.steppps > 100):
         if (self.steppps > 1000 or done[i]):
-          #  print('Fuori ')
+            #  print('Fuori ')
+            plt.figure(figsize=(10, 5))
+            plt.plot(range(0, len(self.prices)),self.prices)
+            plt.show(block = False)
+            plt.show()
             done["__all__"] = True
         self.steppps += 1
 

@@ -4,7 +4,6 @@ import gym
 from gym import spaces
 import pandas as pd
 import numpy as np
-import math
 
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
@@ -52,7 +51,6 @@ class StockTradingEnv(gym.Env):
         step_amount = action[1]
         step_percent_price = action[2]
         step_price = self.current_price + self.current_price*step_percent_price/100
-
         step_total_possible = int(self.virtual_balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         find = True
@@ -149,8 +147,8 @@ class StockTradingEnv(gym.Env):
         reward = (self.balance - self.past_balance) * delay_modifier
         if self.i == 0 and self.balance > self.max_balance:
             self.max_balance = self.balance
+            reward += 100
             print(f'Max Balance {self.max_balance}')
-            reward += 20
         done = self.balance >= INITIAL_ACCOUNT_BALANCE + 1000
         if done:
             print('Obiettivo raggiunto: ')
@@ -174,6 +172,7 @@ class StockTradingEnv(gym.Env):
         self.total_sales_value = 0
         self.ts = [[0, 0, 0, 0]]
         self.current_step = 0
+        self.max_balance = INITIAL_ACCOUNT_BALANCE
         return self._next_observation()
 
     def render(self, mode='human', close=False):
