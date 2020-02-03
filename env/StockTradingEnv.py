@@ -151,9 +151,9 @@ class StockTradingEnv(gym.Env):
 
         delay_modifier = (self.current_step / MAX_STEPS)
        # reward = np.exp(((self.balance - self.past_balance) / 1000)) * delay_modifier
-       # reward = (self.balance - self.past_balance) * delay_modifier
+        reward = (self.balance - self.past_balance) * delay_modifier
 
-        reward = self.balance * delay_modifier
+        #reward = self.balance * delay_modifier
 
         if self.i == 0 and self.balance > self.max_balance:
             self.max_balance = self.balance
@@ -185,6 +185,8 @@ class StockTradingEnv(gym.Env):
             plt.plot(range(0, len(self.shares_held_array)), self.shares_held_array)
             plt.show(block=False)
             plt.show()
+        self.balances = []
+        self.shares_held_array = []
         self.balance = INITIAL_ACCOUNT_BALANCE
         self.virtual_balance = INITIAL_ACCOUNT_BALANCE
         self.net_worth = INITIAL_ACCOUNT_BALANCE
