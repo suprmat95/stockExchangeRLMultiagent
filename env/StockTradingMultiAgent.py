@@ -47,13 +47,13 @@ class StockTradingMultiAgent(MultiAgentEnv):
                 self.prices.append(self.price)
             # if (done[i] or self.steppps > 100):
         if (self.steppps > 500 or done[i]):
-            #  print('Fuori ')
-            plt.figure(figsize=(10, 5))
-            plt.title('Price')
-            plt.plot(range(0, len(self.prices)),self.prices)
-            plt.show(block = False)
-            plt.show()
-            done["__all__"] = True
+            # print('Fuori ')
+             plt.figure(figsize=(10, 5))
+             plt.title('Price')
+             plt.plot(range(0, len(self.prices)), self.prices)
+             plt.show(block = False)
+             plt.show()
+             done["__all__"] = True
         self.steppps += 1
 
         return obs, rew, done, info
