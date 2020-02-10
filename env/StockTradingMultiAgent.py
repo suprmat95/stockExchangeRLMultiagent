@@ -22,13 +22,13 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.price = random.randint(1, 10)
         self.num = num
         self.asks = np.empty((0, 5))
-        self.bids = np.empty((0, 5))
+        self.bids = np.empty((0, 6))
         self.transaction = np.empty((0, 4))
         self.steppps = 0
     def reset(self):
         self.steppps = 0
         self.asks = np.empty((0, 5))
-        self.bids = np.empty((0, 5))
+        self.bids = np.empty((0, 6))
         self.transaction = np.empty((0, 5))
         self.dones = set()
         self.price = random.randint(1, 10)
