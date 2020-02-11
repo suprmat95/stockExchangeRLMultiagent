@@ -81,8 +81,7 @@ class StockTradingEnv(gym.Env):
                 j = 0
                 for item in self.asks:
                     ask_agent = item[0]
-                    ask_shares_percent_price = item[3]
-                    ask_shares_price = self.current_price + self.current_price*ask_shares_percent_price/100
+                    ask_shares_price = item[3]
                     ask_shares_bought = item[2]
                     ask_step = item[4]
                     ask_shares_cost = ask_shares_price * ask_shares_bought
@@ -111,8 +110,7 @@ class StockTradingEnv(gym.Env):
                 j = 0
                 for item in self.bids:
                     bids_agent = item[0]
-                    bids_shares_percent_price = item[3]
-                    bids_shares_price = self.current_price + self.current_price*bids_shares_percent_price/100
+                    bids_shares_price = item[3]
                     bids_step = item[4]
                     bids_shares_sold = item[2]
                     if bids_agent != self.i:
@@ -132,13 +130,13 @@ class StockTradingEnv(gym.Env):
                     j = j + 1
         if find:
             if step_bought_shares > 0 and step_action_type < 1 and self.virtual_balance >= step_price_shares:
-                self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_percent_price, self.current_step, step_price_shares]], axis=0)
+                self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price, self.current_step, step_price_shares]], axis=0)
                 self.bids = sorted(self.bids, key = lambda bid: bid[3])
                # print('Find section')
                # print(f'Virtual balance: {self.virtual_balance} subtraction: {step_price * int(step_total_possible * step_amount)}')
                 self.virtual_balance -= step_price_shares
             elif 0 < step_sold_shares <= self.virtual_shares_held and 1 <= step_action_type < 2:
-                self.asks = np.append(self.asks, [[self.i, step_action_type, step_sold_shares, step_percent_price, self.current_step]], axis=0)
+                self.asks = np.append(self.asks, [[self.i, step_action_type, step_sold_shares, step_price, self.current_step]], axis=0)
                 self.virtual_shares_held -= step_sold_shares
         self.net_worth = self.balance + self.shares_held * self.current_price
         if self.net_worth > self.max_net_worth:

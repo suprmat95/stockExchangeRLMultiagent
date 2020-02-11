@@ -61,13 +61,12 @@ ray.init()
 
 register_env("test", lambda _: StockTradingMultiAgent(5))
 
-tune.run(
+analysis = tune.run(
         "PPO",
         config={
             "env":  "test",
             "num_gpus": 0,
-
-            "num_workers": 0,
+            "num_workers": 7,
             "simple_optimizer": True,
             "multiagent": {
                 "policies": {
@@ -82,4 +81,15 @@ tune.run(
                 "policies_to_train": ["pg_policy"],
 
             },
-        })
+        },
+        )
+
+
+# Get a dataframe for the max accuracy seen for each trial
+df = analysis.dataframe()
+
+# Get a dict mapping {trial logdir -> dataframes} for all trials in the experiment.
+all_dataframes = analysis.trial_dataframes
+
+# Get a list of trials
+trials = analysis.trials
