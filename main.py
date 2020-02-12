@@ -59,23 +59,23 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(5))
+register_env("test", lambda _: StockTradingMultiAgent(3))
 
 analysis = tune.run(
         "PPO",
         config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 7,
+            "num_workers": 0,
             "simple_optimizer": True,
             "multiagent": {
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.1, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.1, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
                 "policies_to_train": ["pg_policy"],
