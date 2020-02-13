@@ -199,6 +199,8 @@ class StockTradingEnv(gym.Env):
           #  plt.show()
             plt.figure(figsize=(10, 5))
             plt.title(f'Reward {self.i}')
+            plt.xlabel("Steps ")
+            plt.ylabel("Value")
             plt.plot(range(0, len(self.rewards)), self.rewards)
             plt.show(block=False)
             plt.show()

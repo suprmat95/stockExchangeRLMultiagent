@@ -57,6 +57,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
             #Show Price
             plt.figure(figsize=(10, 5))
             plt.title('Price')
+            plt.xlabel("Steps ")
+            plt.ylabel("Value")
             plt.plot(range(0, len(self.prices)), self.prices)
             plt.show(block=False)
             plt.show()
@@ -71,6 +73,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.show()
             # Show Balances
             plt.figure(figsize=(15, 5))
+            plt.xlabel("Steps ")
+            plt.ylabel("Value")
             df_balances = pd.DataFrame(balances)
             plt.title('Balances')
             # print('Strings: ')
@@ -80,10 +84,12 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.show(block=False)
             plt.show()
 
-            # Show Balances
+            # Show Shares Held
             plt.figure(figsize=(15, 5))
             df_sharesheld = pd.DataFrame(shares_held)
             plt.title('Shares held')
+            plt.xlabel("Steps ")
+            plt.ylabel("Value")
             # print('Strings: ')
             # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
