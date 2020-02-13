@@ -249,7 +249,7 @@ class StockTradingEnv(gym.Env):
         self.complete_transaction()
 
         obs, rew, done, info = self.step(action)
-        return obs, rew, done, info,  self.net_worthes, self.bids, self.asks, self.current_price, self.transaction
+        return obs, rew, done, info,  self.net_worthes, self.balances, self.shares_held_array, self.bids, self.asks, self.current_price, self.transaction
 
 
 
@@ -291,8 +291,8 @@ class StockTradingEnv(gym.Env):
                     self.virtual_shares_held += transaction_shares
                     # print(f'Agent {self.i} Balance: {self.balance} meno {transaction_price * transaction_shares}')
                     self.balance -= transaction_price * transaction_shares
-                    self.shares_held_array.append(self.shares_held)
-                    self.balances.append(self.balance)
+                   # self.shares_held_array.append(self.shares_held)
+                    #self.balances.append(self.balance)
                     self.virtual_balances.append(self.virtual_balance)
                     self.virtual_shares_held_array.append(self.virtual_shares_held)
 
@@ -302,8 +302,8 @@ class StockTradingEnv(gym.Env):
                     # print(f'Agent {self.i} Balance: {self.balance} piu {transaction_price * transaction_shares}')
                     self.balance += transaction_price * transaction_shares
                     self.virtual_balance += transaction_price * transaction_shares
-                    self.shares_held_array.append(self.shares_held)
-                    self.balances.append(self.balance)
+                   # self.shares_held_array.append(self.shares_held)
+                    #self.balances.append(self.balance)
                     self.virtual_balances.append(self.virtual_balance)
                     self.virtual_shares_held_array.append(self.virtual_shares_held)
                     self.ts = np.append(self.ts,

@@ -41,12 +41,12 @@ class StockTradingMultiAgent(MultiAgentEnv):
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
-        obs, rew, done, info, quantity, net_worthes = {}, {}, {}, {}, {}, {}
+        obs, rew, done, info, quantity, net_worthes, balances, shares_held = {}, {}, {}, {}, {}, {}, {}, {}
         done["__all__"] = False
 
         for i, action in action_dict.items():
             if np.isnan(action).any() == False:
-                obs[i], rew[i], done[i], info[i], net_worthes[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.num)
+                obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.num)
                 self.prices.append(self.price)
             # if (done[i] or self.steppps > 100):
 
@@ -65,13 +65,34 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.title('Net worthes')
             #print('Strings: ')
             #print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
-            d = 0
             plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.show(block=False)
+            plt.show()
+            # Show Balances
+            plt.figure(figsize=(15, 5))
+            df_balances = pd.DataFrame(balances)
+            plt.title('Balances')
+            # print('Strings: ')
+            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
+            plt.plot(range(0, df_balances.to_numpy().shape[0]), df_balances.to_numpy(), label='Agent')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.show(block=False)
+            plt.show()
+
+            # Show Balances
+            plt.figure(figsize=(15, 5))
+            df_sharesheld = pd.DataFrame(shares_held)
+            plt.title('Shares held')
+            # print('Strings: ')
+            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
+            plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
             plt.show()
 
 
+            #Net Worth comparision
             plt.figure(figsize=(10, 5))
             x = 0
             y = 1
