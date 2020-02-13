@@ -1,5 +1,4 @@
 import random
-
 import gym
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ray.rllib.utils import try_import_tf
@@ -8,7 +7,8 @@ from env.StockTradingEnv import StockTradingEnv
 from gym import spaces
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from sklearn.decomposition import PCA
+from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting
 
 MAX_NUM_SHARES = 2147483647
 
@@ -53,7 +53,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.steppps += 1
         if self.steppps > 500:
             #map(lambda n: n,)
-            print('Fuori ')
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #print(pd.DataFrame(net_worthes))
             plt.figure(figsize=(10, 5))
@@ -73,6 +72,34 @@ class StockTradingMultiAgent(MultiAgentEnv):
             cbar.set_label('Steps')
             plt.show(block=False)
             plt.show()
+            #PCA
+            pca = PCA(n_components=3)
+            pca.fit(self.df_net_worthes.to_numpy())
+            x_pca = pca.transform(self.df_net_worthes.to_numpy())
+            #Show PCA 2
+            plt.figure(figsize=(10, 5))
+            plt.title("PCA 2")
+            plt.xlabel(f"PCA 1")
+            plt.ylabel(f"PCA 2")
+            plt.scatter(x_pca[:, 0], x_pca[:, 1], c=colors, cmap='Greens')
+            cbar.set_label('Steps')
+            plt.show(block=False)
+            plt.show()
+            # Show PCA 3
+            fig = plt.figure(figsize=(10, 5))
+            plt.title('PCA 3')
+            ax = fig.gca(projection='3d')
+            colors = range(0, self.df_net_worthes[0].size)
+            ax.scatter(x_pca[:, 0], x_pca[:, 1], x_pca[:, 2], c=colors, cmap='Greens')
+            ax.set_xlabel('X Label')
+            ax.set_ylabel('Y Label')
+            ax.set_zlabel('Z Label')
+
+          #  cbar = plt.colorbar()
+           # cbar.set_label('Steps')
+           # plt.show(block=False)
+            plt.show()
+
             done["__all__"] = True
 
         return obs, rew, done, info
