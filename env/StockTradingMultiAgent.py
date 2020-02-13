@@ -54,12 +54,24 @@ class StockTradingMultiAgent(MultiAgentEnv):
         if self.steppps > 500:
             #map(lambda n: n,)
             self.df_net_worthes = pd.DataFrame(net_worthes)
-            #print(pd.DataFrame(net_worthes))
+            #Show Price
             plt.figure(figsize=(10, 5))
             plt.title('Price')
             plt.plot(range(0, len(self.prices)), self.prices)
             plt.show(block=False)
             plt.show()
+            #Show Net worths
+            plt.figure(figsize=(15, 5))
+            plt.title('Net worthes')
+            #print('Strings: ')
+            #print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
+            d = 0
+            plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            plt.show(block=False)
+            plt.show()
+
+
             plt.figure(figsize=(10, 5))
             x = 0
             y = 1
