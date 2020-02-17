@@ -10,6 +10,8 @@ from ray import tune
 import numpy as np
 from ray.rllib.policy.policy import Policy
 from ray.tune import register_env
+import ray.rllib.agents.ppo as ppo
+
 
 from env.StockTradingMultiAgent import StockTradingMultiAgent
 from env.StockTradingEnv import StockTradingEnv
@@ -44,37 +46,41 @@ class Random(Policy):
 
 
 def select_policy(agent_id):
-       if agent_id == 0 or agent_id == 1:
+       if  agent_id == 19:
            return "pg_policy"
        else:
            return "random"
+   #return "pg_policy"
 
 
 #asks = np.empty((0,4))
 #print(asks)
 #asks = np.append(asks, [[0.99,0.45,0.2,0.12]], axis=0)
 #print(asks)
-#asks = np.delete(asks, [1], axis=0)
+    #asks = np.delete(asks, [1], axis=0)
 #print(asks)
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(5))
+register_env("test", lambda _: StockTradingMultiAgent(20))
+trainer = ppo.PPOTrainer(env="test")
+#        stop={"training_iteration": 5},
 
 analysis = tune.run(
         "PPO",
+        checkpoint_at_end=True,
         config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 0,
+            "num_workers": 4,
             "simple_optimizer": True,
             "multiagent": {
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
-                                    low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
+                                    low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
-                                    low=0, high=1, shape=(1, 6), dtype=np.float16),  spaces.Box(
+                                    low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
