@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
-VALID_SHIFT = 1
-MAX_STEPS = 100
-INITIAL_ACCOUNT_BALANCE = 10000
+VALID_SHIFT = 5
+MAX_STEPS = 500
+INITIAL_ACCOUNT_BALANCE = 1000
 
 class StockTradingEnv(gym.Env):
     """A stock trading environment for OpenAI gym"""
@@ -23,7 +23,8 @@ class StockTradingEnv(gym.Env):
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
 
         # Actions of the format Buy x%, Sell x%, Hold, etc.
-        self.action_space = spaces.Box(low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16)
+        self.action_space = spaces.Box(
+            low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16)
 
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
@@ -50,7 +51,7 @@ class StockTradingEnv(gym.Env):
        #     print('Balance minore di 0')
        #     self.render()
         obs = np.array([[
-            self.current_price / 600,
+            self.current_price / 1000,
             self.balance / MAX_ACCOUNT_BALANCE,
             self.max_net_worth / MAX_ACCOUNT_BALANCE,
             self.shares_held / MAX_NUM_SHARES,
@@ -58,6 +59,9 @@ class StockTradingEnv(gym.Env):
             self.total_shares_sold / MAX_NUM_SHARES,
             self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
         ]])
+      #  if obs[0][0] >= 1:
+        #    print(f'Pice: {self.current_price}')
+        #    print(f'Obs : {obs[0][0]}')
 
         return obs
 
@@ -96,6 +100,7 @@ class StockTradingEnv(gym.Env):
                             self.virtual_balance -= ask_shares_cost
                             self.shares_held += ask_shares_bought
                             self.virtual_shares_held += ask_shares_bought
+                          #  print(f'shares_held: {self.shares_held} ask_shares_bought: {ask_shares_bought}')
                             self.cost_basis = (prev_cost + ask_shares_cost) / (self.shares_held + ask_shares_bought)
                             self.current_price = ask_shares_price
                           #  print(f'Compro  {self.i} da {ask_agent} numero shares {ask_shares_bought} current price {self.current_price} ')
@@ -254,8 +259,6 @@ class StockTradingEnv(gym.Env):
 
         obs, rew, done, info = self.step(action)
         return obs, rew, done, info,  self.net_worthes, self.balances, self.shares_held_array, self.bids, self.asks, self.current_price, self.transaction
-
-
 
     def expire_bids(self):
         j = 0

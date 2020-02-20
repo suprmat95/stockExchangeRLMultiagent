@@ -38,7 +38,7 @@ class Random(Policy):
         # return {}
         pass
 
-    def get_weights(self):
+    def get_weights( self):
         pass
 
     def set_weights(self, weights):
@@ -46,7 +46,7 @@ class Random(Policy):
 
 
 def select_policy(agent_id):
-       if  agent_id == 19:
+       if  agent_id == 4:
            return "pg_policy"
        else:
            return "random"
@@ -62,7 +62,7 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(20))
+register_env("test", lambda _: StockTradingMultiAgent(5))
 trainer = ppo.PPOTrainer(env="test")
 #        stop={"training_iteration": 5},
 
@@ -78,10 +78,10 @@ analysis = tune.run(
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
                                     low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
-                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.3, 1]), dtype=np.float16), {}),
+                                    low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
                 "policies_to_train": ["pg_policy"],
