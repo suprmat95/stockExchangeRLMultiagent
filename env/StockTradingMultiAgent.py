@@ -22,15 +22,16 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.observation_space = gym.spaces.Discrete(2)
         self.action_space = gym.spaces.Discrete(2)
         self.price = random.randint(1, 5)
+        self.step_current = self.price
         self.num = num
         self.df_net_worthes = pd.DataFrame()
-        self.alpha = np.random.normal(0, 0.01, 1)[0]
+        self.alpha = np.random.normal(0, 0.05, 1)[0]
         self.asks = np.empty((0, 5))
         self.bids = np.empty((0, 6))
-        self.transaction = np.empty((0, 4))
         self.steppps = 0
         self.alphas = []
         self.prices = []
+        self.transaction = np.empty((0, 4))
 
 
     def reset(self):
@@ -38,11 +39,11 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.steppps = 0
         self.asks = np.empty((0, 5))
         self.bids = np.empty((0, 6))
-        self.transaction = np.empty((0, 5))
         self.price = random.randint(1, 5)
         self.dones = set()
-        self.alpha = np.random.normal(0, 0.01, 1)[0]
+        self.alpha = np.random.normal(0, 0.05, 1)[0]
         self.prices = []
+        self.transaction = np.empty((0, 4))
         self.alphas = []
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
@@ -50,30 +51,50 @@ class StockTradingMultiAgent(MultiAgentEnv):
         obs, rew, done, info, quantity, net_worthes, balances, shares_held = {}, {}, {}, {}, {}, {}, {}, {}
         done["__all__"] = False
         if self.price <= 0.1:
-      #      print('Gioco finito')
-
+            print('Gioco finito')
             done["__all__"] = True
-
-        # print(f' dopo self price: {self.price}')
-        if self.price > 0:
-            # print(f' prima self price: {self.price}')
-
-
-
-            if self.steppps % random.randint(10, 30) == 0:
-                self.price = self.price + self.price * self.alpha
-             #   print(f'Price: {self.price}')
-                self.alpha += np.random.normal(0, 0.01, 1)[0]
+            self.reset()
+        #print(f' self price: {self.price}')
+        random_steps = [30, 40, 50]
+        if self.price > 0.1:
+            if self.steppps % random_steps[random.randint(0, 2)] == 0:
+              #  print(f' prima  price: {self.price}')
+              #  print(f'alpha: {self.alpha}')
+                self.price = self.price + (self.price * self.alpha)/2
+              #  print(f'dopo price: {self.price}')
+                self.alpha += np.random.normal(0, 0.1, 1)[0]
               #  print(f'alpha: {self.alpha}')
                 self.alphas.append(self.alpha)
-
             for i, action in action_dict.items():
                 if np.isnan(action).any() == False:
-                    obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.num)
-                    self.prices.append(self.price)
+                    self.bids, self.asks = self.agents[i].bet_an_offer_wrapper(action, i, self.bids, self.asks, self.price)
+            self._solve_book()
+            i = 0
+            tot = 0
+            tot_qty = 0
+            price_next_step = 0
+            for item in self.transaction:
+               # print(f'quantity: {item[2]} price :{item[3]}')
+                tot+= item[2]*item[3]
+                tot_qty += item[2]
+                price_next_step = tot / tot_qty
+                #print(f'price next step {price_next_step}')
+            for i in range(0, len(self.agents)):
+                obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.transaction = self.agents[i].step_wrapper(self.price, self.transaction, i)
+            if price_next_step != 0:
+                self.price = price_next_step
             self.steppps += 1
 
-        if self.steppps > 500:
+            self.asks = []
+            self.bids = []
+            self.transaction = []
+       # for i in range(0, len(self.asks)):
+       #     self.asks = np.delete(self.asks, [i], axis=0)
+       # for i in range(0, len(self.bids)):
+       #     self.bids = np.delete(self.bids, [i], axis=0)
+       # for i in range(0, len(self.transaction)):
+      #      self.transaction = np.delete(self.transaction, [i], axis=0)
+        if self.steppps > 700:
             #map(lambda n: n,)
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #Show Price
@@ -165,4 +186,50 @@ class StockTradingMultiAgent(MultiAgentEnv):
             done["__all__"] = True
 
         return obs, rew, done, info
+
+    #def book_solver(self,bids, asks):
+    def _solve_book(self):
+       #print(f'Lunghezza bids: {len(self.bids)}')
+       #print(f'Lunghezza asks: {len(self.asks)}')
+       i = 0
+       j = 0
+       transaction_price = 0
+      # print(f'Bids: {self.bids}')
+      # print(f'Asks: {self.asks}')
+       while i < len(self.bids) and j < len(self.asks):
+          # print('Entrato')
+           transaction_price = (self.bids[i][3] + self.asks[j][3])/2
+           buyer = self.bids[i][0]
+           seller = self.asks[j][0]
+           if self.bids[i][2] > self.asks[j][2]:
+               quantity = self.asks[j][2]
+               self.bids[i][2] -= self.asks[j][2]
+               self.transaction = np.append(self.transaction, [[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]], axis=0)
+               self.asks = np.delete(self.asks, [j], axis=0)
+               j += 1
+           elif self.bids[i][2] < self.asks[j][2]:
+               quantity = self.bids[i][2]
+               self.asks[j][2] -= self.bids[i][2]
+               self.transaction = np.append(self.transaction, [[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]], axis=0)
+               self.bids = np.delete(self.bids, [i], axis=0)
+               i += 1
+           elif self.bids[i][2] == self.asks[j][2]:
+               quantity = self.bids[i][2]
+               self.transaction = np.append(self.transaction, [[buyer, 0,quantity, transaction_price], [seller, 1, quantity, transaction_price]], axis=0)
+               self.asks = np.delete(self.asks, [j], axis=0)
+               self.bids = np.delete(self.bids, [i], axis=0)
+               i += 1
+               j += 1
+     #  print(f'Transaction: {self.transaction}')
+     #  print('________________________________')
+
+
+
+
+
+
+
+
+
+
 

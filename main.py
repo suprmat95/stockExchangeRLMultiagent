@@ -46,10 +46,8 @@ class Random(Policy):
 
 
 def select_policy(agent_id):
-       if  agent_id == 4:
            return "pg_policy"
-       else:
-           return "random"
+
    #return "pg_policy"
 
 
@@ -62,7 +60,7 @@ def select_policy(agent_id):
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(5))
+register_env("test", lambda _: StockTradingMultiAgent(15))
 trainer = ppo.PPOTrainer(env="test")
 #        stop={"training_iteration": 5},
 
