@@ -33,7 +33,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
         self.prices = []
         self.transaction = np.empty((0, 4))
 
-
     def reset(self):
       #  print('RESSSETTTTT')
         self.steppps = 0
@@ -58,15 +57,12 @@ class StockTradingMultiAgent(MultiAgentEnv):
         random_steps = [30, 40, 50]
         if self.price > 0.1:
             if self.steppps % random_steps[random.randint(0, 2)] == 0:
-              #  print(f' prima  price: {self.price}')
-              #  print(f'alpha: {self.alpha}')
                 self.price = self.price + (self.price * self.alpha)/2
-              #  print(f'dopo price: {self.price}')
                 self.alpha += np.random.normal(0, 0.1, 1)[0]
-              #  print(f'alpha: {self.alpha}')
                 self.alphas.append(self.alpha)
             for i, action in action_dict.items():
                 if np.isnan(action).any() == False:
+                    print(f'i: {i}')
                     self.bids, self.asks = self.agents[i].bet_an_offer_wrapper(action, i, self.bids, self.asks, self.price)
             self._solve_book()
             i = 0
@@ -74,28 +70,23 @@ class StockTradingMultiAgent(MultiAgentEnv):
             tot_qty = 0
             price_next_step = 0
             for item in self.transaction:
-               # print(f'quantity: {item[2]} price :{item[3]}')
                 tot+= item[2]*item[3]
                 tot_qty += item[2]
                 price_next_step = tot / tot_qty
-                #print(f'price next step {price_next_step}')
             for i in range(0, len(self.agents)):
                 obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.transaction = self.agents[i].step_wrapper(self.price, self.transaction, i)
             if price_next_step != 0:
                 self.price = price_next_step
             self.steppps += 1
 
-            self.asks = []
-            self.bids = []
-            self.transaction = []
-       # for i in range(0, len(self.asks)):
-       #     self.asks = np.delete(self.asks, [i], axis=0)
-       # for i in range(0, len(self.bids)):
-       #     self.bids = np.delete(self.bids, [i], axis=0)
-       # for i in range(0, len(self.transaction)):
-      #      self.transaction = np.delete(self.transaction, [i], axis=0)
+            del self.asks
+            del self.bids
+            del self.transaction
+            self.asks = np.empty((0, 5))
+            self.bids = np.empty((0, 6))
+            self.transaction = np.empty((0, 4))
+
         if self.steppps > 700:
-            #map(lambda n: n,)
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #Show Price
             plt.figure(figsize=(10, 5))
@@ -116,8 +107,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
             #Show Net worths
             plt.figure(figsize=(15, 5))
             plt.title('Net worthes')
-            #print('Strings: ')
-            #print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
@@ -128,8 +117,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.ylabel("Value")
             df_balances = pd.DataFrame(balances)
             plt.title('Balances')
-            # print('Strings: ')
-            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, df_balances.to_numpy().shape[0]), df_balances.to_numpy(), label='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
@@ -140,8 +127,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.title('Shares held')
             plt.xlabel("Steps ")
             plt.ylabel("Value")
-            # print('Strings: ')
-            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
@@ -154,10 +139,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.xlabel(f"Agent {x}")
             plt.ylabel(f"Agent {y}")
             colors = range(0, self.df_net_worthes[0].size)
-
             plt.scatter(self.df_net_worthes[x], self.df_net_worthes[y], c=colors, cmap='Greens')
             cbar = plt.colorbar()
-#            cbar.set_label('Steps')
             plt.show(block=False)
             plt.show()
             #PCA
@@ -189,13 +172,8 @@ class StockTradingMultiAgent(MultiAgentEnv):
 
     #def book_solver(self,bids, asks):
     def _solve_book(self):
-       #print(f'Lunghezza bids: {len(self.bids)}')
-       #print(f'Lunghezza asks: {len(self.asks)}')
        i = 0
        j = 0
-       transaction_price = 0
-      # print(f'Bids: {self.bids}')
-      # print(f'Asks: {self.asks}')
        while i < len(self.bids) and j < len(self.asks):
           # print('Entrato')
            transaction_price = (self.bids[i][3] + self.asks[j][3])/2
@@ -220,8 +198,14 @@ class StockTradingMultiAgent(MultiAgentEnv):
                self.bids = np.delete(self.bids, [i], axis=0)
                i += 1
                j += 1
-     #  print(f'Transaction: {self.transaction}')
-     #  print('________________________________')
+
+    def _reset_array(self, array):
+        N = array.shape[0]
+        for i in range(0,N):
+            array = np.delete(array, [0], axis=0)
+        return array
+
+
 
 
 

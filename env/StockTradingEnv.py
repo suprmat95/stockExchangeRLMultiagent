@@ -79,7 +79,11 @@ class StockTradingEnv(gym.Env):
         step_shares_sold_max = step_sold_shares + (step_sold_shares * 0.2)
 
         if step_bought_shares > 0 and step_action_type < 1 and self.virtual_balance >= step_price_shares:
+            print(f'i: {self.i} action: {step_action_type} bought {step_bought_shares} curret_price {step_price} current_step { self.current_step} price_share {step_price_shares}')
+            print(f'Self bids dopo: {self.bids}')
             self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price, self.current_step, step_price_shares]], axis=0)
+            print(f'Self bids prima: {self.bids}')
+            print('appesos')
             self.bids = sorted(self.bids, key = lambda bid: bid[3], reverse = True)
                # print('Find section')
                # print(f'Virtual balance: {self.virtual_balance} subtraction: {step_price * int(step_total_possible * step_amount)}')
