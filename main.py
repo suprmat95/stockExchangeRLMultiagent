@@ -51,16 +51,10 @@ def select_policy(agent_id):
    #return "pg_policy"
 
 
-#asks = np.empty((0,4))
-#print(asks)
-#asks = np.append(asks, [[0.99,0.45,0.2,0.12]], axis=0)
-#print(asks)
-    #asks = np.delete(asks, [1], axis=0)
-#print(asks)
 ray.init()
 
 
-register_env("test", lambda _: StockTradingMultiAgent(15))
+register_env("test", lambda _: StockTradingMultiAgent(20))
 trainer = ppo.PPOTrainer(env="test")
 #        stop={"training_iteration": 5},
 
@@ -75,10 +69,10 @@ analysis = tune.run(
             "multiagent": {
                 "policies": {
                                 "pg_policy": (None,  spaces.Box(
-                                    low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
+                                    low=0, high=1, shape=(10, 7), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
                                 "random": (None,  spaces.Box(
-                                    low=0, high=1, shape=(1, 7), dtype=np.float16),  spaces.Box(
+                                    low=0, high=1, shape=(10, 7), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
                               },
                 "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),

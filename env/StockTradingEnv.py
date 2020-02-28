@@ -10,7 +10,7 @@ MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
 VALID_SHIFT = 1
-MAX_STEPS = 700
+MAX_STEPS = 500
 INITIAL_ACCOUNT_BALANCE = 1000
 
 class StockTradingEnv(gym.Env):
@@ -19,15 +19,13 @@ class StockTradingEnv(gym.Env):
 
     def __init__(self):
         super(StockTradingEnv, self).__init__()
-
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
-
         # Actions of the format Buy x%, Sell x%, Hold, etc.
         self.action_space = spaces.Box(
             low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16)
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(1, 7), dtype=np.float16)
+            low=0, high=1, shape=(10, 7), dtype=np.float16)
         self.net_worthes =[]
         self.rewards = []
         self.balances = []
@@ -35,8 +33,9 @@ class StockTradingEnv(gym.Env):
         self.virtual_balances = []
         self.virtual_shares_held_array = []
         self.current_action = 0
-        self.bids = []
-        self.asks = []
+        self.asks_columns_name = ['Agent', 'Action_Type', 'Shares', 'Step_Price', 'Current_Step']
+        self.bids_columns_name = ['Agent', 'Action_Type', 'Shares', 'Step_Price', 'Current_Step', 'Share_Price']
+
         self.max_balance = INITIAL_ACCOUNT_BALANCE
         self.num = 0
         self.i = 0
@@ -44,23 +43,23 @@ class StockTradingEnv(gym.Env):
         self.past_balance = 0
         self.past_net_worth = 0
         self.current_price = 0
+        self.frame = np.zeros((10, 7))
 
     def _next_observation(self):
 
+        self.frame = np.delete(self.frame, [0], axis=0)
 
-        obs = np.array([[
-            self.current_price / 2000,
-            self.balance / MAX_ACCOUNT_BALANCE,
-            self.max_net_worth / MAX_ACCOUNT_BALANCE,
-            self.shares_held / MAX_NUM_SHARES,
-            self.cost_basis / MAX_SHARE_PRICE,
-            self.total_shares_sold / MAX_NUM_SHARES,
-            self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
-        ]])
-        if obs[0][0] >= 1:
-            print(f'Price: {self.current_price}')
-            print(f'Obs : {obs[0][0]}')
+        self.frame = np.append(self.frame,
+                               [[self.current_price / 2000,
+                                 self.balance / MAX_ACCOUNT_BALANCE,
+                                 self.max_net_worth / MAX_ACCOUNT_BALANCE,
+                                 self.shares_held / MAX_NUM_SHARES,
+                                 self.cost_basis / MAX_SHARE_PRICE,
+                                 self.total_shares_sold / MAX_NUM_SHARES,
+                                 self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
+                                 ]], axis=0)
 
+        obs = np.array(self.frame)
         return obs
 
     def _bet_an_offer(self, action):
@@ -77,21 +76,16 @@ class StockTradingEnv(gym.Env):
         step_sold_shares = int(step_amount * self.shares_held)
         step_shares_sold_min = step_sold_shares - (step_sold_shares * 0.2)
         step_shares_sold_max = step_sold_shares + (step_sold_shares * 0.2)
-
+        bids = pd.DataFrame(columns=self.bids_columns_name)
+        asks = pd.DataFrame(columns=self.asks_columns_name)
         if step_bought_shares > 0 and step_action_type < 1 and self.virtual_balance >= step_price_shares:
-            print(f'i: {self.i} action: {step_action_type} bought {step_bought_shares} curret_price {step_price} current_step { self.current_step} price_share {step_price_shares}')
-            print(f'Self bids dopo: {self.bids}')
-            self.bids = np.append(self.bids, [[self.i, step_action_type, step_bought_shares, step_price, self.current_step, step_price_shares]], axis=0)
-            print(f'Self bids prima: {self.bids}')
-            print('appesos')
-            self.bids = sorted(self.bids, key = lambda bid: bid[3], reverse = True)
+            bids = bids.append(pd.DataFrame(np.array([[self.i, step_action_type, step_bought_shares, step_price, self.current_step, step_price_shares]]), columns=self.bids_columns_name), ignore_index=True)
                # print('Find section')
                # print(f'Virtual balance: {self.virtual_balance} subtraction: {step_price * int(step_total_possible * step_amount)}')
             self.virtual_balance -= step_price_shares
 
         elif 0 < step_sold_shares <= self.virtual_shares_held and 1 <= step_action_type < 2:
-            self.asks = np.append(self.asks, [[self.i, step_action_type, step_sold_shares, step_price, self.current_step]], axis=0)
-            self.asks = sorted(self.asks, key = lambda ask: ask[3], reverse = False)
+            asks = asks.append(pd.DataFrame(np.array([[self.i, step_action_type, step_sold_shares, step_price, self.current_step]]), columns=self.asks_columns_name), ignore_index=True)
             self.virtual_shares_held -= step_sold_shares
         self.net_worth = self.balance + self.shares_held * self.current_price
         if self.current_step == 0:
@@ -100,6 +94,8 @@ class StockTradingEnv(gym.Env):
             self.max_net_worth = self.net_worth
         if self.shares_held == 0:
             self.cost_basis = 0
+
+        return bids, asks
 
     def step(self, action):
         delay_modifier = (self.current_step / MAX_STEPS)
@@ -112,8 +108,8 @@ class StockTradingEnv(gym.Env):
         self.current_step += 1
        # reward = - (self.net_worth - self.past_net_worth)
         done = self.balance >= INITIAL_ACCOUNT_BALANCE*5
-        if done:
-            print(f'belence: {self.balance} Initial: {INITIAL_ACCOUNT_BALANCE} ')
+        #if done:
+            #print(f'belence: {self.balance} Initial: {INITIAL_ACCOUNT_BALANCE} ')
             #self.render()
         obs = self._next_observation()
         self.past_balance = self.balance
@@ -154,6 +150,8 @@ class StockTradingEnv(gym.Env):
         self.total_sales_value = 0
         self.current_action = 0
         self.current_step = 0
+        self.frame =  np.zeros((10, 7))
+
         return self._next_observation()
 
     def render(self, mode='human', close=False):
@@ -173,10 +171,10 @@ class StockTradingEnv(gym.Env):
     def step_wrapper(self, price, transaction, i):
         self.i = i
         self.current_price = price
-        self.transaction = transaction
-        self.complete_transaction(transaction)
+        if not transaction.empty:
+            transaction = self.complete_transaction(transaction)
         obs, rew, done, info = self.step(self.current_action)
-        return obs, rew, done, info,  self.net_worthes, self.balances, self.shares_held_array,  self.transaction
+        return obs, rew, done, info,  self.net_worthes, self.balances, self.shares_held_array,  transaction
 
     def bet_an_offer_wrapper(self, action, i, bids, asks, price):
         self.virtual_balance = self.balance
@@ -186,52 +184,27 @@ class StockTradingEnv(gym.Env):
         self.asks = np.array(asks)
         self.i = i
         self.current_price = price
-        self._bet_an_offer(action)
-        return self.bids, self.asks
-
-    def expire_bids(self):
-        j = 0
-        for item in self.bids:
-            if int(item[0]) == self.i and item[4] <= self.current_step - VALID_SHIFT:
-                self.virtual_balance += item[5]
-                self.bids = np.delete(self.bids, [j], axis=0)
-                j -= 1
-            j = j + 1
-
-    def expire_asks(self):
-        j = 0
-        for item in self.asks:
-            if int(item[0]) == self.i and item[4] <= self.current_step - VALID_SHIFT:
-                self.virtual_shares_held += item[2]
-                self.asks = np.delete(self.asks, [j], axis=0)
-                j -= 1
-                j = j + 1
+        return self._bet_an_offer(action)
 
     def complete_transaction(self, transaction):
-        j = 0
-        for item in self.transaction:
-            #print(f'Item: {item}')
-            transaction_agent_id = item[0]
-            transaction_action_type = item[1]
-            transaction_shares = item[2]
-            transaction_price = item[3]
-            if transaction_agent_id == self.i:
-                if transaction_action_type < 1:
-                    self.transaction = np.delete(self.transaction, [j], 0)
-                    j -= 1
-                    self.shares_held += transaction_shares
-                    self.virtual_shares_held += transaction_shares
-                    self.balance -= transaction_price * transaction_shares
-                    self.virtual_balances.append(self.virtual_balance)
-                    self.virtual_shares_held_array.append(self.virtual_shares_held)
-
-                elif transaction_action_type >= 1 and transaction_action_type < 2:
-                    self.shares_held -= transaction_shares
-                    self.total_shares_sold += transaction_shares
-                    self.balance += transaction_price * transaction_shares
-                    self.virtual_balance += transaction_price * transaction_shares
-                    self.virtual_balances.append(self.virtual_balance)
-                    self.virtual_shares_held_array.append(self.virtual_shares_held)
-                    self.transaction = np.delete(self.transaction, [j], 0)
-                    j -= 1
-            j += 1
+        transaction_item = transaction[(transaction['Agent'] == self.i)]
+        if not transaction_item.empty:
+            sold = transaction_item[(transaction_item['Action_Type'] < 1)]
+            if not sold.empty:
+                sum = sold['Share'].sum()
+                self.shares_held += sum
+                self.virtual_shares_held += sum
+                self.balance -= sum * sold['Price'].sum()
+                self.virtual_balances.append(self.virtual_balance)
+                self.virtual_shares_held_array.append(self.virtual_shares_held)
+                transaction.drop(sold.index, inplace=True)
+            bought = transaction_item[(transaction_item['Action_Type'] >=1) & (transaction_item['Action_Type'] < 2)]
+            if not bought.empty:
+                sum = bought['Share'].sum()
+                self.shares_held -= sum
+                self.total_shares_sold += sum
+                self.balance += sum * bought['Price'].sum()
+                self.virtual_balances.append(self.virtual_balance)
+                self.virtual_shares_held_array.append(self.virtual_shares_held)
+                transaction.drop(bought.index, inplace=True)
+        return transaction
