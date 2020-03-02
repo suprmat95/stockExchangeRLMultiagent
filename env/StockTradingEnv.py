@@ -170,6 +170,9 @@ class StockTradingEnv(gym.Env):
 
     def step_wrapper(self, price, transaction, i):
         self.i = i
+        #print(f'i: {i}')
+        #print('tr')
+        #print(transaction)
         self.current_price = price
         if not transaction.empty:
             transaction = self.complete_transaction(transaction)
@@ -187,23 +190,33 @@ class StockTradingEnv(gym.Env):
         return self._bet_an_offer(action)
 
     def complete_transaction(self, transaction):
+        #print('_______________________________')
+        #print('transaction')
+        #print(transaction)
         transaction_item = transaction[(transaction['Agent'] == self.i)]
         if not transaction_item.empty:
             sold = transaction_item[(transaction_item['Action_Type'] < 1)]
+            #print('Compro')
+            #print(sold)
             if not sold.empty:
                 sum = sold['Share'].sum()
+                #print(f'Tot shares comprate: {sum}')
                 self.shares_held += sum
                 self.virtual_shares_held += sum
-                self.balance -= sum * sold['Price'].sum()
+                self.balance -= (sold['Share'] * sold['Price']).sum()
                 self.virtual_balances.append(self.virtual_balance)
                 self.virtual_shares_held_array.append(self.virtual_shares_held)
                 transaction.drop(sold.index, inplace=True)
             bought = transaction_item[(transaction_item['Action_Type'] >=1) & (transaction_item['Action_Type'] < 2)]
+            #print('Vendo')
+            #print(bought)
             if not bought.empty:
                 sum = bought['Share'].sum()
+                #print(f'Tot shares vendute: {sum}')
+
                 self.shares_held -= sum
                 self.total_shares_sold += sum
-                self.balance += sum * bought['Price'].sum()
+                self.balance += (bought['Share'] * bought['Price']).sum()
                 self.virtual_balances.append(self.virtual_balance)
                 self.virtual_shares_held_array.append(self.virtual_shares_held)
                 transaction.drop(bought.index, inplace=True)

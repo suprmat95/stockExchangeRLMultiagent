@@ -52,6 +52,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
     def step(self, action_dict):
         obs, rew, done, info, quantity, net_worthes, balances, shares_held = {}, {}, {}, {}, {}, {}, {}, {}
         done["__all__"] = False
+
         if self.price <= 0.1:
             print('Gioco finito')
             done["__all__"] = True
@@ -68,6 +69,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
                     bids, asks = self.agents[i].bet_an_offer_wrapper(action, i, self.bids, self.asks, self.price)
                     self.bids = self.bids.append(bids, ignore_index=True)
                     self.asks = self.asks.append(asks, ignore_index=True)
+
             self._solve_book(self.bids, self.asks)
 
             price_next_step = pd.DataFrame(self.transactions['Share'] * self.transactions['Price']).sum() / self.transactions['Share'].sum( )
@@ -76,7 +78,6 @@ class StockTradingMultiAgent(MultiAgentEnv):
             #print(price_next_step)
             for i in range(0, len(self.agents)):
                 obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.transactions = self.agents[i].step_wrapper(self.price, self.transactions, i)
-
             if not price_next_step.isnull().values.any() and price_next_step.iloc[0] != 0:
                 self.price = price_next_step.iloc[0]
                 self.prices.append(self.price)
@@ -85,7 +86,9 @@ class StockTradingMultiAgent(MultiAgentEnv):
             self.asks.drop(self.asks.index[:], inplace=True)
             self.transactions.drop(self.transactions.index[:], inplace=True)
 
+
         if self.steppps > 500:
+
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #Show Price
             plt.figure(figsize=(10, 5))
@@ -170,59 +173,45 @@ class StockTradingMultiAgent(MultiAgentEnv):
         return obs, rew, done, info
 
     def _solve_book(self, bids, asks):
-       self.bids = pd.DataFrame(bids)
-       self.bids = self.bids.sort_values(by=['Step_Price'], ascending=False, ignore_index=True)
-
-       self.asks = pd.DataFrame(asks)
-       self.asks = self.asks.sort_values(by=['Step_Price'], ascending=True, ignore_index=True)
-
-       print(f'Bids:')
-       print(self.bids)
-       print(f'Asks')
-       print(self.asks)
-       i = 0
-       j = 0
-       len_bid = len(self.bids)
-       len_ask = len(self.asks)
-       while i < len_bid and j < len_ask:
-           print(f'len_bids: {len(self.bids)} len_asks: {len(self.asks)}')
-           print(f'price bids {self.bids.iloc[0, 3]} price asks: { self.asks.iloc[0, 3]}')
+        self.bids = pd.DataFrame(bids)
+        self.bids = self.bids.sort_values(by=['Step_Price'], ascending=False, ignore_index=True)
+        self.asks = pd.DataFrame(asks)
+        self.asks = self.asks.sort_values(by=['Step_Price'], ascending=True, ignore_index=True)
+        i = 0
+        j = 0
+        len_bid = len(self.bids)
+        len_ask = len(self.asks)
+        while i < len_bid and j < len_ask:
            if self.bids.iloc[0, 3] >= self.asks.iloc[0, 3]:
-               transaction_price = (self.bids.iloc[0, 3] + self.asks.iloc[0, 3])/2
+               transaction_price = self.asks.iloc[0, 3]
                buyer = self.bids.iloc[0, 0]
                seller = self.asks.iloc[0, 0]
-               print(f'i: {i} j: {j}')
+            #   print(f'i: {i} j: {j}')
                if self.bids.iloc[0, 2] > self.asks.iloc[0, 2]:
                    quantity = self.asks.iloc[0, 2]
-                   print(f'quantity: {quantity}')
                    self.bids.iloc[0, 2] -= self.asks.iloc[0, 2]
-                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name))
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
                    self.asks.drop([j], inplace=True)
                    j += 1
-                   print(f'i: {i} j: {j}')
 
                elif self.bids.iloc[0, 2] < self.asks.iloc[0, 2]:
                    quantity = self.bids.iloc[0, 2]
-                   print(f'quantity: {quantity}')
                    self.asks.iloc[0, 2] -= self.bids.iloc[0, 2]
-                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name))
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
                    self.bids.drop([i], inplace=True)
                    i += 1
-                   print(f'i: {i} j: {j}')
 
                elif self.bids.iloc[0, 2] == self.asks.iloc[0, 2]:
                    quantity = self.bids.iloc[0, 2]
-                   print(f'quantity: {quantity}')
-                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name))
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
                    self.asks.drop([j], inplace=True)
                    self.bids.drop([i], inplace=True)
                    i += 1
                    j += 1
-                   print(f'i: {i} j: {j}')
            else:
                break
-           print('Transaction')
-           print(self.transactions)
+
+
 
 
 

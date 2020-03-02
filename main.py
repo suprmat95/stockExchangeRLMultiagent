@@ -64,7 +64,7 @@ analysis = tune.run(
         config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 0,
+            "num_workers": 4,
             "simple_optimizer": True,
             "multiagent": {
                 "policies": {
