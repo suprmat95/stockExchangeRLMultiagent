@@ -9,15 +9,10 @@ from gym.spaces import Discrete
 from ray import tune
 import numpy as np
 from ray.rllib.policy.policy import Policy
-from ray.tune import register_env
+from ray.tune.registry import register_env
 import ray.rllib.agents.ppo as ppo
-
-
+from ray.tune.logger import pretty_print
 from env.StockTradingMultiAgent import StockTradingMultiAgent
-from env.StockTradingEnv import StockTradingEnv
-from ray.rllib.tests.test_multi_agent_env import MultiCartpole
-
-
 class Random(Policy):
     def __init__(self, observation_space, action_space, config):
         self.observation_space = observation_space
@@ -46,48 +41,47 @@ class Random(Policy):
 
 
 def select_policy(agent_id):
-           return "pg_policy"
+    if agent_id%2 ==0:
+        return "pg_policy"
+    else:
+        return "pg_policy2"
+
 
    #return "pg_policy"
 
 
 ray.init()
 
+env = StockTradingMultiAgent(10)
+register_env("test", lambda _: env)
 
-register_env("test", lambda _: StockTradingMultiAgent(20))
-trainer = ppo.PPOTrainer(env="test")
-#        stop={"training_iteration": 5},
 
-analysis = tune.run(
-        "PPO",
-        checkpoint_at_end=True,
-        config={
+
+trainer = ppo.PPOTrainer(env="test", config={
             "env":  "test",
             "num_gpus": 0,
-            "num_workers": 4,
+            "num_workers": 7,
             "simple_optimizer": True,
             "multiagent": {
                 "policies": {
-                                "pg_policy": (None,  spaces.Box(
-                                    low=0, high=1, shape=(10, 7), dtype=np.float16),  spaces.Box(
+                               "pg_policy": (None,  spaces.Box(
+                                    low=0, high=1, shape=(10, 6), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
-                                "random": (None,  spaces.Box(
-                                    low=0, high=1, shape=(10, 7), dtype=np.float16),  spaces.Box(
+                               "pg_policy2": (None,  spaces.Box(
+                                    low=0, high=1, shape=(10, 6), dtype=np.float16),  spaces.Box(
                                     low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16), {}),
                               },
-                "policy_mapping_fn": (lambda agent_id: select_policy(agent_id)),
-                "policies_to_train": ["pg_policy"],
+                "policy_mapping_fn": (lambda agent_id: select_policy(agent_id))   ,
+                "policies_to_train": ["pg_policy",  "pg_policy2"],
 
             },
-        },
-        )
+})
 
-
-# Get a dataframe for the max accuracy seen for each trial
-df = analysis.dataframe()
-
-# Get a dict mapping {trial logdir -> dataframes} for all trials in the experiment.
-all_dataframes = analysis.trial_dataframes
-
-# Get a list of trials
-trials = analysis.trials
+for i in range(2000):
+   # Perform one iteration of training the policy with PPO
+   print(i)
+   result = trainer.train()
+   print(pretty_print(result))
+   if i % 10 == 0:
+       checkpoint = trainer.save()
+       print("checkpoint saved at", checkpoint)

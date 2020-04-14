@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 MAX_ACCOUNT_BALANCE = 2147483647
 MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
-VALID_SHIFT = 1
 MAX_STEPS = 500
 INITIAL_ACCOUNT_BALANCE = 1000
 
@@ -25,7 +24,7 @@ class StockTradingEnv(gym.Env):
             low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16)
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(10, 7), dtype=np.float16)
+            low=0, high=1, shape=(10, 6), dtype=np.float16)
         self.net_worthes =[]
         self.rewards = []
         self.balances = []
@@ -43,22 +42,21 @@ class StockTradingEnv(gym.Env):
         self.past_balance = 0
         self.past_net_worth = 0
         self.current_price = 0
-        self.frame = np.zeros((10, 7))
+        self.frame = np.zeros((10, 6))
 
     def _next_observation(self):
 
         self.frame = np.delete(self.frame, [0], axis=0)
 
         self.frame = np.append(self.frame,
-                               [[self.current_price / 2000,
+                               [[self.current_price / 100,
                                  self.balance / MAX_ACCOUNT_BALANCE,
                                  self.max_net_worth / MAX_ACCOUNT_BALANCE,
                                  self.shares_held / MAX_NUM_SHARES,
-                                 self.cost_basis / MAX_SHARE_PRICE,
+                             #    self.cost_basis / MAX_SHARE_PRICE,
                                  self.total_shares_sold / MAX_NUM_SHARES,
                                  self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
                                  ]], axis=0)
-
         obs = np.array(self.frame)
         return obs
 
@@ -150,7 +148,7 @@ class StockTradingEnv(gym.Env):
         self.total_sales_value = 0
         self.current_action = 0
         self.current_step = 0
-        self.frame =  np.zeros((10, 7))
+        self.frame =  np.zeros((10, 6))
 
         return self._next_observation()
 
@@ -213,9 +211,9 @@ class StockTradingEnv(gym.Env):
             if not bought.empty:
                 sum = bought['Share'].sum()
                 #print(f'Tot shares vendute: {sum}')
-
                 self.shares_held -= sum
                 self.total_shares_sold += sum
+                self.total_sales_value += (bought['Share'] * bought['Price']).sum()
                 self.balance += (bought['Share'] * bought['Price']).sum()
                 self.virtual_balances.append(self.virtual_balance)
                 self.virtual_shares_held_array.append(self.virtual_shares_held)

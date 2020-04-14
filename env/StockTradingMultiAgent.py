@@ -62,7 +62,7 @@ class StockTradingMultiAgent(MultiAgentEnv):
         if self.price > 0.1:
             if self.steppps % random_steps[random.randint(0, 2)] == 0:
                 self.price = self.price + (self.price * self.alpha)/2
-                self.alpha += np.random.normal(0, 0.1, 1)[0]
+                self.alpha += np.random.normal(0, 0.03, 1)[0]
                 self.alphas.append(self.alpha)
             for i, action in action_dict.items():
                 if np.isnan(action).any() == False:
@@ -73,11 +73,10 @@ class StockTradingMultiAgent(MultiAgentEnv):
             self._solve_book(self.bids, self.asks)
 
             price_next_step = pd.DataFrame(self.transactions['Share'] * self.transactions['Price']).sum() / self.transactions['Share'].sum( )
-            #print(self.transactions['Share'])
-            #print(self.transactions['Price'])
-            #print(price_next_step)
+
             for i in range(0, len(self.agents)):
                 obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.transactions = self.agents[i].step_wrapper(self.price, self.transactions, i)
+
             if not price_next_step.isnull().values.any() and price_next_step.iloc[0] != 0:
                 self.price = price_next_step.iloc[0]
                 self.prices.append(self.price)
@@ -86,90 +85,88 @@ class StockTradingMultiAgent(MultiAgentEnv):
             self.asks.drop(self.asks.index[:], inplace=True)
             self.transactions.drop(self.transactions.index[:], inplace=True)
 
-
         if self.steppps > 500:
 
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #Show Price
-            plt.figure(figsize=(10, 5))
-            plt.title('Price')
-            plt.xlabel("Steps ")
-            plt.ylabel("Value")
-            plt.plot(range(0, len(self.prices)), self.prices)
-            plt.show(block=False)
-            plt.show()
+         #   plt.figure(figsize=(10, 5))
+         #   plt.title('Price')
+         #   plt.xlabel("Steps ")
+         #   plt.ylabel("Value")
+        #    plt.plot(range(0, len(self.prices)), self.prices)
+         #   plt.show(block=False)
+         #   plt.show()
             # Show Alpha
-            plt.figure(figsize=(10, 5))
-            plt.title('alpha')
-            plt.xlabel("Steps ")
-            plt.ylabel("Value")
-            plt.plot(range(0, len(self.alphas)), self.alphas)
-            plt.show(block=False)
-            plt.show()
+         #   plt.figure(figsize=(10, 5))
+         #   plt.title('alpha')
+         #   plt.xlabel("Steps ")
+         #   plt.ylabel("Value")
+         #   plt.plot(range(0, len(self.alphas)), self.alphas)
+         #   plt.show(block=False)
+         #   plt.show()
             #Show Net worths
-            plt.figure(figsize=(15, 5))
-            plt.title('Net worthes')
-            plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.show(block=False)
-            plt.show()
+         #   plt.figure(figsize=(15, 5))
+         #   plt.title('Net worthes')
+         #   plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
+         #   plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+         #   plt.show(block=False)
+         #   plt.show()
             # Show Balances
-            plt.figure(figsize=(15, 5))
-            plt.xlabel("Steps ")
-            plt.ylabel("Value")
-            df_balances = pd.DataFrame(balances)
-            plt.title('Balances')
-            plt.plot(range(0, df_balances.to_numpy().shape[0]), df_balances.to_numpy(), label='Agent')
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.show(block=False)
-            plt.show()
+         #   plt.figure(figsize=(15, 5))
+         #   plt.xlabel("Steps ")
+         #   plt.ylabel("Value")
+         #   df_balances = pd.DataFrame(balances)
+         #   plt.title('Balances')
+         #   plt.plot(range(0, df_balances.to_numpy().shape[0]), df_balances.to_numpy(), label='Agent')
+         #   plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+         #   plt.show(block=False)
+          #  plt.show()
             # Show Shares Held
-            plt.figure(figsize=(15, 5))
-            df_sharesheld = pd.DataFrame(shares_held)
-            plt.title('Shares held')
-            plt.xlabel("Steps ")
-            plt.ylabel("Value")
-            plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.show(block=False)
-            plt.show()
+          #  plt.figure(figsize=(15, 5))
+          #  df_sharesheld = pd.DataFrame(shares_held)
+          #  plt.title('Shares held')
+          #  plt.xlabel("Steps ")
+          #  plt.ylabel("Value")
+          #  plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
+          #  plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+          #  plt.show(block=False)
+         #   plt.show()
             #Net Worth comparision
-            plt.figure(figsize=(10, 5))
+         #   plt.figure(figsize=(10, 5))
             x = 3
             y = 4
-            plt.title('Net_Worth Comparision')
-            plt.xlabel(f"Agent {x}")
-            plt.ylabel(f"Agent {y}")
-            colors = range(0, self.df_net_worthes[0].size)
-            plt.scatter(self.df_net_worthes[x], self.df_net_worthes[y], c=colors, cmap='Greens')
-            cbar = plt.colorbar()
-            plt.show(block=False)
-            plt.show()
+          #  plt.title('Net_Worth Comparision')
+          #  plt.xlabel(f"Agent {x}")
+          #  plt.ylabel(f"Agent {y}")
+          #  colors = range(0, self.df_net_worthes[0].size)
+         #   plt.scatter(self.df_net_worthes[x], self.df_net_worthes[y], c=colors, cmap='Greens')
+          #  cbar = plt.colorbar()
+          #  plt.show(block=False)
+          #  plt.show()
             #PCA
-            pca = PCA(n_components=3)
-            pca.fit(self.df_net_worthes.to_numpy())
-            x_pca = pca.transform(self.df_net_worthes.to_numpy())
+          #  pca = PCA(n_components=3)
+          #  pca.fit(self.df_net_worthes.to_numpy())
+          #  x_pca = pca.transform(self.df_net_worthes.to_numpy())
             #Show PCA 2
-            plt.figure(figsize=(10, 5))
-            plt.title("PCA 2")
-            plt.xlabel(f"PCA 1")
-            plt.ylabel(f"PCA 2")
-            plt.scatter(x_pca[:, 0], x_pca[:, 1], c=colors, cmap='Greens')
-            cbar.set_label('Steps')
-            plt.show(block=False)
-            plt.show()
+          #  plt.figure(figsize=(10, 5))
+          #  plt.title("PCA 2")
+          #  plt.xlabel(f"PCA 1")
+         #   plt.ylabel(f"PCA 2")
+          #  plt.scatter(x_pca[:, 0], x_pca[:, 1], c=colors, cmap='Greens')
+         #   cbar.set_label('Steps')
+         #   plt.show(block=False)
+         #   plt.show()
             # Show PCA 3
-            fig = plt.figure(figsize=(10, 5))
-            plt.title('PCA 3')
-            ax = fig.gca(projection='3d')
-            colors = range(0, self.df_net_worthes[0].size)
-            ax.scatter(x_pca[:, 0], x_pca[:, 1], x_pca[:, 2], c=colors, cmap='Greens')
-            ax.set_xlabel('X Label')
-            ax.set_ylabel('Y Label')
-            ax.set_zlabel('Z Label')
-            plt.show()
+         #   fig = plt.figure(figsize=(10, 5))
+         #   plt.title('PCA 3')
+         #   ax = fig.gca(projection='3d')
+         #   colors = range(0, self.df_net_worthes[0].size)
+         #   ax.scatter(x_pca[:, 0], x_pca[:, 1], x_pca[:, 2], c=colors, cmap='Greens')
+         #   ax.set_xlabel('X Label')
+         #   ax.set_ylabel('Y Label')
+         #   ax.set_zlabel('Z Label')
+         #   plt.show()
             done["__all__"] = True
-
         return obs, rew, done, info
 
     def _solve_book(self, bids, asks):
@@ -191,23 +188,24 @@ class StockTradingMultiAgent(MultiAgentEnv):
                    quantity = self.asks.iloc[0, 2]
                    self.bids.iloc[0, 2] -= self.asks.iloc[0, 2]
                    self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
-                   self.asks.drop([j], inplace=True)
+                   self.asks.drop(self.asks.index[0], inplace=True)
                    j += 1
 
                elif self.bids.iloc[0, 2] < self.asks.iloc[0, 2]:
                    quantity = self.bids.iloc[0, 2]
                    self.asks.iloc[0, 2] -= self.bids.iloc[0, 2]
                    self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
-                   self.bids.drop([i], inplace=True)
+                   self.bids.drop(self.bids.index[0], inplace=True)
                    i += 1
 
                elif self.bids.iloc[0, 2] == self.asks.iloc[0, 2]:
                    quantity = self.bids.iloc[0, 2]
                    self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
-                   self.asks.drop([j], inplace=True)
-                   self.bids.drop([i], inplace=True)
+                   self.asks.drop(self.asks.index[0], inplace=True)
+                   self.bids.drop(self.bids.index[0], inplace=True)
                    i += 1
                    j += 1
+
            else:
                break
 
