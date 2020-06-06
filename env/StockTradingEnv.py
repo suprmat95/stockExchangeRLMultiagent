@@ -7,16 +7,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 MAX_ACCOUNT_BALANCE = 2147483647
-MAX_NUM_SHARES = 2147483647
 MAX_SHARE_PRICE = 5000
-MAX_STEPS = 500
+MAX_STEPS = 1000
 INITIAL_ACCOUNT_BALANCE = 1000
+INITIAL_NUMBER_SHARES = 100
 
 class StockTradingEnv(gym.Env):
     """A stock trading environment for OpenAI gym"""
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, n):
         super(StockTradingEnv, self).__init__()
         self.reward_range = (0, MAX_ACCOUNT_BALANCE)
         # Actions of the format Buy x%, Sell x%, Hold, etc.
@@ -24,8 +24,8 @@ class StockTradingEnv(gym.Env):
             low=np.array([0, 0.01, -1]), high=np.array([3, 0.5, 1]), dtype=np.float16)
         # Prices contains the OHCL values for the last five prices
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(10, 6), dtype=np.float16)
-        self.net_worthes =[]
+            low=0, high=1, shape=(10, 5), dtype=np.float16)
+        self.net_worthes = []
         self.rewards = []
         self.balances = []
         self.shares_held_array = []
@@ -36,29 +36,29 @@ class StockTradingEnv(gym.Env):
         self.bids_columns_name = ['Agent', 'Action_Type', 'Shares', 'Step_Price', 'Current_Step', 'Share_Price']
 
         self.max_balance = INITIAL_ACCOUNT_BALANCE
+        self.MAX_NUM_SHARES = n * INITIAL_NUMBER_SHARES
+
         self.num = 0
         self.i = 0
         self.initial_net_worth = 0
         self.past_balance = 0
         self.past_net_worth = 0
         self.current_price = 0
-        self.frame = np.zeros((10, 6))
+        self.frame = np.zeros((10, 5))
 
     def _next_observation(self):
 
         self.frame = np.delete(self.frame, [0], axis=0)
-
         self.frame = np.append(self.frame,
-                               [[self.current_price / 100,
+                               [[self.current_price / 700,
                                  self.balance / MAX_ACCOUNT_BALANCE,
                                  self.max_net_worth / MAX_ACCOUNT_BALANCE,
-                                 self.shares_held / MAX_NUM_SHARES,
+                                 self.shares_held / self.MAX_NUM_SHARES,
                              #    self.cost_basis / MAX_SHARE_PRICE,
-                                 self.total_shares_sold / MAX_NUM_SHARES,
-                                 self.total_sales_value / (MAX_NUM_SHARES * MAX_SHARE_PRICE),
+                             #    self.total_shares_sold / self.MAX_NUM_SHARES,
+                                 self.total_sales_value / (self.MAX_NUM_SHARES * MAX_SHARE_PRICE),
                                  ]], axis=0)
-        obs = np.array(self.frame)
-        return obs
+        return np.array(self.frame)
 
     def _bet_an_offer(self, action):
         # Set the current price to a random price within the time step
@@ -66,6 +66,7 @@ class StockTradingEnv(gym.Env):
         step_amount = action[1]
         step_percent_price = action[2]
         step_price = self.current_price + self.current_price*step_percent_price/100
+       # print(f'current price: ', self.current_price,' step price: ', step_price)
         step_total_possible = int(self.virtual_balance / step_price)
         step_bought_shares = int(step_amount * step_total_possible)
         step_price_shares = step_price * step_bought_shares
@@ -98,6 +99,7 @@ class StockTradingEnv(gym.Env):
     def step(self, action):
         delay_modifier = (self.current_step / MAX_STEPS)
         reward = (2 * self.net_worth - self.initial_net_worth - self.past_net_worth) * delay_modifier
+       # print(f'Reward: ',reward )
         if self.current_step > MAX_STEPS:
             # self.render()
            # if self.i == 0 or self.i == 1:
@@ -142,13 +144,13 @@ class StockTradingEnv(gym.Env):
         self.max_net_worth = INITIAL_ACCOUNT_BALANCE
         self.max_balance = INITIAL_ACCOUNT_BALANCE
         self.shares_held = 100
-        self.virtual_shares_held = 100
+        self.virtual_shares_held = INITIAL_NUMBER_SHARES
         self.cost_basis = 0
         self.total_shares_sold = 0
         self.total_sales_value = 0
         self.current_action = 0
         self.current_step = 0
-        self.frame =  np.zeros((10, 6))
+        self.frame = np.zeros((10, 5))
 
         return self._next_observation()
 
@@ -205,7 +207,7 @@ class StockTradingEnv(gym.Env):
                 self.virtual_balances.append(self.virtual_balance)
                 self.virtual_shares_held_array.append(self.virtual_shares_held)
                 transaction.drop(sold.index, inplace=True)
-            bought = transaction_item[(transaction_item['Action_Type'] >=1) & (transaction_item['Action_Type'] < 2)]
+            bought = transaction_item[(transaction_item['Action_Type'] >= 1) & (transaction_item['Action_Type'] < 2)]
             #print('Vendo')
             #print(bought)
             if not bought.empty:
