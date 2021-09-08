@@ -10,49 +10,83 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D # <--- This is important for 3d plotting
 
-MAX_NUM_SHARES = 2147483647
-
 
 class StockTradingMultiAgent(MultiAgentEnv):
 
     def __init__(self, num):
         super(StockTradingMultiAgent, self).__init__()
-        self.agents = [StockTradingEnv() for _ in range(num)]
+        self.agents = [StockTradingEnv(num) for _ in range(num)]
         self.dones = set()
         self.observation_space = gym.spaces.Discrete(2)
         self.action_space = gym.spaces.Discrete(2)
-        self.price = random.randint(1, 10)
+        self.price = random.randint(1, 5)
         self.num = num
-        columns = list(map(lambda n: f"Agent {n}", range(1, self.num)))
         self.df_net_worthes = pd.DataFrame()
-
-        self.asks = np.empty((0, 5))
-        self.bids = np.empty((0, 6))
-        self.transaction = np.empty((0, 4))
+        self.alpha = np.random.normal(0, 0.05, 1)[0]
+        self.asks_columns_name = ['Agent', 'Action_Type', 'Shares', 'Step_Price', 'Current_Step']
+        self.bids_columns_name = ['Agent', 'Action_Type', 'Shares', 'Step_Price', 'Current_Step', 'Share_Price']
+        self.transactions_columns_name = ['Agent', 'Action_Type', 'Share', 'Price']
+        self.asks = pd.DataFrame(columns=self.asks_columns_name)
+        self.bids = pd.DataFrame(columns=self.bids_columns_name)
+        self.transactions = pd.DataFrame(columns=self.transactions_columns_name)
         self.steppps = 0
-    def reset(self):
-        self.steppps = 0
-        self.asks = np.empty((0, 5))
-        self.bids = np.empty((0, 6))
-        self.transaction = np.empty((0, 5))
-        self.dones = set()
-        self.price = random.randint(1, 10)
+        self.alphas = []
         self.prices = []
+
+    def reset(self):
+      #  print('RESSSETTTTT')
+        self.steppps = 0
+        self.asks.drop(self.asks.index[:], inplace=True)
+        self.bids.drop(self.bids.index[:], inplace=True)
+        self.transactions.drop(self.transactions.index[:],  inplace=True)
+        self.price = random.randint(1, 5)
+        self.dones = set()
+        self.alpha = np.random.normal(0, 0.05, 1)[0]
+        self.prices = []
+        self.alphas = []
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def step(self, action_dict):
         obs, rew, done, info, quantity, net_worthes, balances, shares_held = {}, {}, {}, {}, {}, {}, {}, {}
         done["__all__"] = False
+        random_steps = [150, 100]
 
+      #  if self.price <= 0.1:
+      #      print('Gioco finito')
+      #      done["__all__"] = True
+      #      self.reset()
+        #print(f' self price: {self.price}')
+      #  else:
+        #print(f'Numero agenti: {len(action_dict.items())}')
+        ####if self.steppps % random_steps[0] == 0 or self.steppps % random_steps[1] == 0:
+        ####    if 1 < self.price < 400:
+        ####        self.price = self.price + (self.price * self.alpha)/2
+        ####        self.alpha += np.random.normal(0, 0.05, 1)[0]
+        ####        self.alphas.append(self.alpha)
         for i, action in action_dict.items():
-            if np.isnan(action).any() == False:
-                obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.bids, self.asks, self.price, self.transaction = self.agents[i].step_wrapper(action, self.price, i, self.bids, self.asks, self.transaction, self.num)
-                self.prices.append(self.price)
-            # if (done[i] or self.steppps > 100):
+            if not np.isnan(action).any():
+                bids, asks = self.agents[i].bet_an_offer_wrapper(action, i, self.bids, self.asks, self.price)
+                self.bids = self.bids.append(bids, ignore_index=True)
+                self.asks = self.asks.append(asks, ignore_index=True)
 
+        self._solve_book(self.bids, self.asks)
+
+        price_next_step = pd.DataFrame(self.transactions['Share'] * self.transactions['Price']).sum() / self.transactions['Share'].sum()
+
+        for i in range(0, len(self.agents)):
+            #print(f'price: ', self.price)
+            obs[i], rew[i], done[i], info[i], net_worthes[i], balances[i], shares_held[i], self.transactions = self.agents[i].step_wrapper(self.price, self.transactions, i)
+
+        if not price_next_step.isnull().values.any() and price_next_step.iloc[0] != 0:
+            self.price = price_next_step.iloc[0]
+        self.prices.append(self.price)
         self.steppps += 1
-        if self.steppps > 500:
-            #map(lambda n: n,)
+        self.bids.drop(self.bids.index[:], inplace=True)
+        self.asks.drop(self.asks.index[:], inplace=True)
+        self.transactions.drop(self.transactions.index[:], inplace=True)
+
+        if self.steppps > 1000:
+
             self.df_net_worthes = pd.DataFrame(net_worthes)
             #Show Price
             plt.figure(figsize=(10, 5))
@@ -62,11 +96,17 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.plot(range(0, len(self.prices)), self.prices)
             plt.show(block=False)
             plt.show()
+            # Show Alpha
+            plt.figure(figsize=(10, 5))
+            plt.title('alpha')
+            plt.xlabel("Steps ")
+            plt.ylabel("Value")
+            plt.plot(range(0, len(self.alphas)), self.alphas)
+            plt.show(block=False)
+            plt.show()
             #Show Net worths
             plt.figure(figsize=(15, 5))
             plt.title('Net worthes')
-            #print('Strings: ')
-            #print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, self.df_net_worthes.to_numpy().shape[0]), self.df_net_worthes.to_numpy(), label ='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
@@ -77,38 +117,32 @@ class StockTradingMultiAgent(MultiAgentEnv):
             plt.ylabel("Value")
             df_balances = pd.DataFrame(balances)
             plt.title('Balances')
-            # print('Strings: ')
-            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
             plt.plot(range(0, df_balances.to_numpy().shape[0]), df_balances.to_numpy(), label='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
             plt.show()
-
             # Show Shares Held
             plt.figure(figsize=(15, 5))
             df_sharesheld = pd.DataFrame(shares_held)
             plt.title('Shares held')
             plt.xlabel("Steps ")
             plt.ylabel("Value")
-            # print('Strings: ')
-            # print(list(map(lambda gg: f'Agent: {gg}', range(0, self.df_net_worthes.to_numpy().shape[0]))))
+            print('shares\n')
+            print(sum(df_sharesheld.to_numpy()[100]))
             plt.plot(range(0, df_sharesheld.to_numpy().shape[0]), df_sharesheld.to_numpy(), label='Agent')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.show(block=False)
             plt.show()
-
-
             #Net Worth comparision
-            plt.figure(figsize=(10, 5))
-            x = 0
-            y = 1
+         #   plt.figure(figsize=(10, 5))
+            x = 3
+            y = 4
             plt.title('Net_Worth Comparision')
             plt.xlabel(f"Agent {x}")
             plt.ylabel(f"Agent {y}")
             colors = range(0, self.df_net_worthes[0].size)
             plt.scatter(self.df_net_worthes[x], self.df_net_worthes[y], c=colors, cmap='Greens')
             cbar = plt.colorbar()
-            cbar.set_label('Steps')
             plt.show(block=False)
             plt.show()
             #PCA
@@ -133,13 +167,68 @@ class StockTradingMultiAgent(MultiAgentEnv):
             ax.set_xlabel('X Label')
             ax.set_ylabel('Y Label')
             ax.set_zlabel('Z Label')
-
-          #  cbar = plt.colorbar()
-           # cbar.set_label('Steps')
-           # plt.show(block=False)
             plt.show()
-
             done["__all__"] = True
-
         return obs, rew, done, info
+
+    def _solve_book(self, bids, asks):
+        self.bids = pd.DataFrame(bids)
+        self.bids = self.bids.sort_values(by=['Step_Price'], ascending=False, ignore_index=True)
+        self.asks = pd.DataFrame(asks)
+        self.asks = self.asks.sort_values(by=['Step_Price'], ascending=True, ignore_index=True)
+    #    print('Current step: \n')
+    #    print(self.price)
+    #    print('BIDS: \n')
+    #    print(self.bids)
+    #    print('ASKS: \n')
+    #    print(self.asks)
+
+        i = 0
+        j = 0
+        len_bid = len(self.bids)
+        len_ask = len(self.asks)
+        while i < len_bid and j < len_ask:
+           if self.bids.iloc[0, 3] >= self.asks.iloc[0, 3]:
+               transaction_price = self.asks.iloc[0, 3]
+               buyer = self.bids.iloc[0, 0]
+               seller = self.asks.iloc[0, 0]
+            #   print(f'i: {i} j: {j}')
+               if self.bids.iloc[0, 2] > self.asks.iloc[0, 2]:
+                   quantity = self.asks.iloc[0, 2]
+                   self.bids.iloc[0, 2] -= self.asks.iloc[0, 2]
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
+                   self.asks.drop(self.asks.index[0], inplace=True)
+                   j += 1
+
+               elif self.bids.iloc[0, 2] < self.asks.iloc[0, 2]:
+                   quantity = self.bids.iloc[0, 2]
+                   self.asks.iloc[0, 2] -= self.bids.iloc[0, 2]
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price],[seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
+                   self.bids.drop(self.bids.index[0], inplace=True)
+                   i += 1
+
+               elif self.bids.iloc[0, 2] == self.asks.iloc[0, 2]:
+                   quantity = self.bids.iloc[0, 2]
+                   self.transactions = self.transactions.append(pd.DataFrame(np.array([[buyer, 0, quantity, transaction_price], [seller, 1, quantity, transaction_price]]), columns=self.transactions_columns_name, index=[buyer, seller]))
+                   self.asks.drop(self.asks.index[0], inplace=True)
+                   self.bids.drop(self.bids.index[0], inplace=True)
+                   i += 1
+                   j += 1
+           #    print('TRANSACTION: \n')
+           #    print(self.transactions)
+           else:
+               break
+
+
+
+
+
+
+
+
+
+
+
+
+
 
